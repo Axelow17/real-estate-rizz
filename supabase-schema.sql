@@ -84,13 +84,13 @@ CREATE TRIGGER update_player_last_seen_on_stay
     FOR EACH ROW EXECUTE FUNCTION update_last_seen();
 
 -- Data migration for existing houses (run after schema creation if upgrading)
--- Update existing houses to have last_claim set if null
--- This fixes the NaN timer issue for houses created before proper initialization
+-- Update existing houses to have last_claim set to NOW() if null
+-- This allows existing users to claim immediately and fixes the NaN timer issue
 UPDATE houses
-SET last_claim = COALESCE(updated_at, created_at, NOW()::timestamp)
+SET last_claim = NOW()
 WHERE last_claim IS NULL;
 
 -- Ensure all houses have updated_at set
 UPDATE houses
-SET updated_at = COALESCE(updated_at, created_at, NOW()::timestamp)
+SET updated_at = COALESCE(updated_at, created_at, NOW())
 WHERE updated_at IS NULL;
