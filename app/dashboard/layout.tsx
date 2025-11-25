@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
 
 const miniAppEmbed = {
-  url: "https://real-estate-rizz.vercel.app/dashboard",
-  name: "RealEstate Rizz - Dashboard",
-  description: "Manage your house, mine rizz points, and explore the real estate empire",
-  icon: "https://real-estate-rizz.vercel.app/houses/house1.png"
+  version: "1",
+  imageUrl: "https://real-estate-rizz.vercel.app/houses/house1.png",
+  button: {
+    title: "🏠 Manage My House",
+    action: {
+      type: "launch_miniapp",
+      url: "https://real-estate-rizz.vercel.app/dashboard",
+      name: "RealEstate Rizz"
+    }
+  }
 };
 
 export const metadata: Metadata = {

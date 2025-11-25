@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
 
 const miniAppEmbed = {
-  url: "https://real-estate-rizz.vercel.app/leaderboard",
-  name: "RealEstate Rizz - Leaderboard",
-  description: "View the top houses and most voted real estate in the rizz empire",
-  icon: "https://real-estate-rizz.vercel.app/houses/house1.png"
+  version: "1",
+  imageUrl: "https://real-estate-rizz.vercel.app/houses/house1.png",
+  button: {
+    title: "🏆 View Leaderboard",
+    action: {
+      type: "launch_miniapp",
+      url: "https://real-estate-rizz.vercel.app/leaderboard",
+      name: "RealEstate Rizz"
+    }
+  }
 };
 
 export const metadata: Metadata = {

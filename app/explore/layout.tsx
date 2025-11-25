@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
 
 const miniAppEmbed = {
-  url: "https://real-estate-rizz.vercel.app/explore",
-  name: "RealEstate Rizz - Explore",
-  description: "Discover and vote on amazing houses in the real estate rizz community",
-  icon: "https://real-estate-rizz.vercel.app/houses/house1.png"
+  version: "1",
+  imageUrl: "https://real-estate-rizz.vercel.app/houses/house1.png",
+  button: {
+    title: "🔍 Explore Houses",
+    action: {
+      type: "launch_miniapp",
+      url: "https://real-estate-rizz.vercel.app/explore",
+      name: "RealEstate Rizz"
+    }
+  }
 };
 
 export const metadata: Metadata = {

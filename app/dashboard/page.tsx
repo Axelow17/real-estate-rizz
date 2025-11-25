@@ -588,7 +588,8 @@ export default function DashboardPage() {
           <button
             onClick={() => {
               // Share logic
-              const text = `Check out my new house in RealEstate Rizz! 🏠 #RealEstateRizz`;
+              const shareUrl = `https://real-estate-rizz.vercel.app/api/share/embed?action=built&username=${encodeURIComponent(user.username)}`;
+              const text = `Check out my new house in RealEstate Rizz! ${shareUrl} 🏠 #RealEstateRizz`;
               window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
               setShowShareBanner(false);
             }}
@@ -710,7 +711,8 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => {
-                  const text = `I just ${shareModal.action}d @${shareModal.targetUsername}'s house in RealEstate Rizz! Who's next? 🏠❤️`;
+                  const shareUrl = `https://real-estate-rizz.vercel.app/api/share/embed?action=voted&username=${encodeURIComponent(user.username)}&targetUsername=${encodeURIComponent(shareModal.targetUsername)}`;
+                  const text = `I just ${shareModal.action}d @${shareModal.targetUsername}'s house in RealEstate Rizz! ${shareUrl} 🏠❤️`;
                   window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
                   shareModal.onClose();
                 }}
@@ -740,7 +742,8 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => {
-                  const text = `Just upgraded my house to level ${upgradeModal.newLevel} in RealEstate Rizz! 🏠💪 #RealEstateRizz`;
+                  const shareUrl = `https://real-estate-rizz.vercel.app/api/share/embed?action=upgraded&username=${encodeURIComponent(user.username)}&level=${upgradeModal.newLevel}`;
+                  const text = `Just upgraded my house to level ${upgradeModal.newLevel} in RealEstate Rizz! ${shareUrl} 🏠💪 #RealEstateRizz`;
                   window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
                   setUpgradeModal({ isOpen: false, newLevel: 0 });
                 }}

@@ -263,7 +263,8 @@ export default function ExplorePage() {
               </button>
               <button
                 onClick={() => {
-                  const text = `I just ${shareModal.action}d @${shareModal.targetUsername}'s house in RealEstate Rizz! Who's next? 🏠❤️`;
+                  const shareUrl = `https://real-estate-rizz.vercel.app/api/share/embed?action=voted&username=${encodeURIComponent(user.username)}&targetUsername=${encodeURIComponent(shareModal.targetUsername)}`;
+                  const text = `I just ${shareModal.action}d @${shareModal.targetUsername}'s house in RealEstate Rizz! ${shareUrl} 🏠❤️`;
                   window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
                   shareModal.onClose();
                 }}

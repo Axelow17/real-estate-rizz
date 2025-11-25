@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
 
 const miniAppEmbed = {
-  url: "https://real-estate-rizz.vercel.app/my-stay",
-  name: "RealEstate Rizz - My Stay",
-  description: "Manage your stays, earn rewards, and track your mining progress",
-  icon: "https://real-estate-rizz.vercel.app/houses/house1.png"
+  version: "1",
+  imageUrl: "https://real-estate-rizz.vercel.app/houses/house1.png",
+  button: {
+    title: "🏨 Manage My Stay",
+    action: {
+      type: "launch_miniapp",
+      url: "https://real-estate-rizz.vercel.app/my-stay",
+      name: "RealEstate Rizz"
+    }
+  }
 };
 
 export const metadata: Metadata = {

@@ -2,10 +2,16 @@ import "../styles/globals.css";
 import type { ReactNode } from "react";
 
 const miniAppEmbed = {
-  url: "https://real-estate-rizz.vercel.app",
-  name: "RealEstate Rizz",
-  description: "Build and manage your virtual real estate empire with rizz points",
-  icon: "https://real-estate-rizz.vercel.app/houses/house1.png"
+  version: "1",
+  imageUrl: "https://real-estate-rizz.vercel.app/houses/house1.png",
+  button: {
+    title: "🏠 Build Your Empire",
+    action: {
+      type: "launch_miniapp",
+      url: "https://real-estate-rizz.vercel.app",
+      name: "RealEstate Rizz"
+    }
+  }
 };
 
 export const metadata = {
