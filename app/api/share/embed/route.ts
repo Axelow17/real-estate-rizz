@@ -51,7 +51,9 @@ export async function GET(request: NextRequest) {
       action: {
         type: "launch_frame",
         url: actionUrl,
-        name: "RealEstate Rizz"
+        name: "RealEstate Rizz",
+        splashImageUrl: "https://real-estate-rizz.vercel.app/houses/house1.png",
+        splashBackgroundColor: "#f5f0ec"
       }
     }
   };
