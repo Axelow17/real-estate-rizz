@@ -328,9 +328,22 @@ export default function DashboardPage() {
           Mining rate: {miningRate(house.level)} RIZZ/hour
         </div>
         <div className="text-xs text-primary/60 mt-1">
-          Next claim available in: {Math.max(0, Math.floor((3600000 - (now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime())) / 60000))} min
+          Next claim: {(() => {
+            const remainingMs = 3600000 - (now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime());
+            const hours = Math.floor(Math.max(0, remainingMs) / 3600000);
+            const minutes = Math.floor((Math.max(0, remainingMs) % 3600000) / 60000);
+            const seconds = Math.floor((Math.max(0, remainingMs) % 60000) / 1000);
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          })()}
         </div>
-        <div className="mt-3">
+        <div className="text-xs text-primary/50 mt-1">
+          Earned: ~{(() => {
+            const elapsedMs = now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime();
+            const elapsedHours = Math.max(0, elapsedMs) / 3600000;
+            return (miningRate(house.level) * elapsedHours).toFixed(2);
+          })()} RIZZ
+        </div>
+        <div className="mt-2">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className="bg-primary h-2 rounded-full transition-all duration-1000"
@@ -338,6 +351,9 @@ export default function DashboardPage() {
                 width: `${Math.min(100, Math.max(0, ((now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime()) / 3600000) * 100))}%`
               }}
             ></div>
+          </div>
+          <div className="text-xs text-primary/50 mt-1">
+            {Math.min(100, Math.max(0, ((now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime()) / 3600000) * 100)).toFixed(1)}% to claim
           </div>
         </div>
       </section>
