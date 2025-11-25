@@ -7,6 +7,7 @@ import Leaderboard from "@/components/Leaderboard";
 import { useFarcasterUser } from "@/lib/useFarcasterUser";
 import { miningRate, nextUpgradeCost } from "@/lib/economy";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 type HouseState = {
   level: number;
@@ -586,11 +587,17 @@ export default function DashboardPage() {
           <h3 className="font-semibold text-accent">🎉 House Built! Share Your Home</h3>
           <p className="text-sm text-primary/70 mb-3">Let friends know about your new house!</p>
           <button
-            onClick={() => {
+            onClick={async () => {
               // Share logic
               const shareUrl = `https://real-estate-rizz.vercel.app/api/share/embed?action=built&username=${encodeURIComponent(user.username)}`;
-              const text = `Check out my new house in RealEstate Rizz! ${shareUrl} 🏠 #RealEstateRizz`;
-              window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
+              const text = `Check out my new house in RealEstate Rizz! ${shareUrl}`;
+              try {
+                await sdk.actions.composeCast({ text });
+              } catch (err) {
+                console.warn("Failed to compose cast", err);
+                // Fallback to manual share
+                window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
+              }
               setShowShareBanner(false);
             }}
             className="px-6 py-2 bg-accent text-white font-semibold rounded-full"
@@ -741,10 +748,16 @@ export default function DashboardPage() {
                 Skip
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   const shareUrl = `https://real-estate-rizz.vercel.app/api/share/embed?action=upgraded&username=${encodeURIComponent(user.username)}&level=${upgradeModal.newLevel}`;
-                  const text = `Just upgraded my house to level ${upgradeModal.newLevel} in RealEstate Rizz! ${shareUrl} 🏠💪 #RealEstateRizz`;
-                  window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
+                  const text = `Just upgraded my house to level ${upgradeModal.newLevel} in RealEstate Rizz! ${shareUrl}`;
+                  try {
+                    await sdk.actions.composeCast({ text });
+                  } catch (err) {
+                    console.warn("Failed to compose cast", err);
+                    // Fallback to manual share
+                    window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
+                  }
                   setUpgradeModal({ isOpen: false, newLevel: 0 });
                 }}
                 className="flex-1 py-2 bg-accent text-white rounded-full font-semibold"
