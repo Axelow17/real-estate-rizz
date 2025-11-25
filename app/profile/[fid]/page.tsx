@@ -17,6 +17,7 @@ type ProfileData = {
   house: {
     level: number;
     total_votes: number;
+    rizz_point: number;
   };
   currentStay?: {
     id: number;
@@ -223,6 +224,10 @@ export default function ProfilePage() {
           <div>
             <div className="font-semibold">Total Votes</div>
             <div>{data.house.total_votes}</div>
+          </div>
+          <div>
+            <div className="font-semibold">Total RIZZ</div>
+            <div>{data.house.rizz_point}</div>
           </div>
           <div>
             <div className="font-semibold">Current Guests</div>

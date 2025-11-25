@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
     const { data: house, error } = await supabaseServer
       .from("houses")
-      .select("level, total_votes")
+      .select("level, total_votes, rizz_point")
       .eq("fid", fid)
       .single();
 
