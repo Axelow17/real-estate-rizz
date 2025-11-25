@@ -16,8 +16,9 @@ CREATE TABLE players (
 CREATE TABLE houses (
   fid INTEGER PRIMARY KEY REFERENCES players(fid) ON DELETE CASCADE,
   level INTEGER DEFAULT 1 CHECK (level >= 1),
-  rizz_point INTEGER DEFAULT 0 CHECK (rizz_point >= 0),
-  last_claim TIMESTAMPTZ,
+  base_rizz INTEGER DEFAULT 0 CHECK (base_rizz >= 0),  -- claimed points only (mining progress calculated server-side)
+  mining_rate INTEGER DEFAULT 8 CHECK (mining_rate >= 0),  -- points per hour
+  last_tick TIMESTAMPTZ DEFAULT NOW(),  -- when mining was last calculated
   total_votes INTEGER DEFAULT 0 CHECK (total_votes >= 0),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -45,7 +46,7 @@ CREATE TABLE stays (
 CREATE INDEX idx_players_last_seen ON players(last_seen);
 CREATE INDEX idx_houses_fid ON houses(fid); -- For real-time subscriptions
 CREATE INDEX idx_houses_level ON houses(level);
-CREATE INDEX idx_houses_rizz_point ON houses(rizz_point);
+CREATE INDEX idx_houses_base_rizz ON houses(base_rizz);
 CREATE INDEX idx_houses_updated_at ON houses(updated_at DESC); -- For real-time ordering
 CREATE INDEX idx_votes_host_fid_voted_at ON votes(host_fid, voted_at DESC);
 CREATE INDEX idx_votes_voted_at ON votes(voted_at DESC);
@@ -88,20 +89,21 @@ CREATE TRIGGER update_player_last_seen_on_stay
 
 -- Additional constraints for data integrity
 ALTER TABLE houses ADD CONSTRAINT houses_level_max CHECK (level <= 10);
-ALTER TABLE houses ADD CONSTRAINT houses_rizz_point_positive CHECK (rizz_point >= 0);
+ALTER TABLE houses ADD CONSTRAINT houses_base_rizz_positive CHECK (base_rizz >= 0);
 ALTER TABLE votes ADD CONSTRAINT votes_not_self_vote CHECK (voter_fid != host_fid);
 ALTER TABLE stays ADD CONSTRAINT stays_not_self_stay CHECK (guest_fid != host_fid);
 -- Data migration for existing houses (run after schema creation if upgrading)
--- Update existing houses to have last_claim set to NOW() if null
--- This allows existing users to claim immediately and fixes the NaN timer issue
+-- Migrate existing rizz_point to base_rizz and set proper mining_rate
 UPDATE houses
-SET last_claim = NOW()
-WHERE last_claim IS NULL;
+SET 
+  base_rizz = COALESCE(rizz_point, 0),
+  mining_rate = 8 + FLOOR(level * 1.5),  -- Calculate mining rate based on level
+  last_tick = COALESCE(last_claim, updated_at, created_at, NOW())
+WHERE base_rizz = 0 OR base_rizz IS NULL;
 
--- Ensure all houses have updated_at set
-UPDATE houses
-SET updated_at = COALESCE(updated_at, created_at, NOW())
-WHERE updated_at IS NULL;
+-- Drop old columns after migration (uncomment when ready)
+ALTER TABLE houses DROP COLUMN IF EXISTS rizz_point;
+ALTER TABLE houses DROP COLUMN IF EXISTS last_claim;
 
 -- Performance optimizations
 -- Enable Row Level Security (RLS) for better security (optional)
@@ -112,3 +114,6 @@ WHERE updated_at IS NULL;
 
 -- Vacuum and analyze for optimal performance (run periodically)
 -- VACUUM ANALYZE players, houses, votes, stays;
+
+-- Schema ready for production use
+-- Run this entire script in Supabase SQL Editor to set up the database

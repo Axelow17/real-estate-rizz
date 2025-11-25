@@ -36,7 +36,8 @@ export async function POST(req: Request) {
     }
 
     const now = new Date();
-    const windowStart = new Date(house.last_claim || house.updated_at || house.created_at || new Date());
+    const lastTick = new Date(house.last_tick);
+    const windowStart = lastTick;
     const windowEnd = now;
 
     const baseRate = miningRate(house.level);
@@ -86,13 +87,13 @@ export async function POST(req: Request) {
     }
 
     const totalEarned = baseEarned + Math.floor(guestReward) + Math.floor(hostReward);
-    const newRizz = house.rizz_point + totalEarned;
+    const newBaseRizz = house.base_rizz + totalEarned;
 
     const { data: updatedHouse, error: updateErr } = await supabaseServer
       .from("houses")
       .update({
-        rizz_point: newRizz,
-        last_claim: now.toISOString(),
+        base_rizz: newBaseRizz,
+        last_tick: now.toISOString(),
         updated_at: now.toISOString()
       })
       .eq("fid", fid)

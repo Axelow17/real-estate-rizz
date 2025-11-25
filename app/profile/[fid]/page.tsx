@@ -49,16 +49,7 @@ export default function ProfilePage() {
         const bio = neynarUser?.profile?.bio?.text;
         const followers = neynarUser?.follower_count || 0;
 
-        // Fetch house
-        const houseRes = await fetch("/api/house/info", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fid: targetFid })
-        });
-        const houseData = await houseRes.json();
-        if (!houseRes.ok) throw new Error(houseData.error);
-
-        // Current stay (if user is guest)
+        // Current stay (if user is guest) - initialize early
         let currentStay = null;
         if (user) {
           const stayRes = await fetch("/api/stay/current", {
@@ -71,6 +62,40 @@ export default function ProfilePage() {
             currentStay = stayData.stay;
           }
         }
+
+        // Fetch house
+        const houseRes = await fetch("/api/house/info", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fid: targetFid })
+        });
+        const houseData = await houseRes.json();
+        if (!houseRes.ok) {
+          // If house not found, this user hasn't joined the game yet
+          if (houseRes.status === 404) {
+            setData({
+              player: {
+                fid: targetFid,
+                username,
+                pfp_url,
+                bio,
+                followers
+              },
+              house: {
+                level: 0,
+                total_votes: 0,
+                rizz_point: 0
+              },
+              currentStay,
+              guests: 0
+            });
+            setLoading(false);
+            return;
+          }
+          throw new Error(houseData.error);
+        }
+
+        // Guests count
 
         // Guests count
         const guestsRes = await fetch("/api/stay/guests", {
@@ -212,7 +237,19 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <HouseMainCard level={data.house.level} />
+      {data.house.level > 0 ? (
+        <HouseMainCard level={data.house.level} />
+      ) : (
+        <section className="flex flex-col items-center mt-3">
+          <div className="relative w-64 h-64 flex items-center justify-center bg-gray-100 rounded-3xl">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🏠</div>
+              <div className="text-lg font-semibold text-primary/70">Not Joined Yet</div>
+              <div className="text-sm text-primary/50 mt-1">This user hasn't started playing RealEstate Rizz</div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="rounded-3xl bg-white shadow-md p-4 space-y-3">
         <h2 className="text-lg font-semibold">House Stats</h2>

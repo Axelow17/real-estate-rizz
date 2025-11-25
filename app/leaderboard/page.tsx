@@ -9,7 +9,10 @@ type LeaderboardEntry = {
   username: string;
   pfp_url?: string;
   level: number;
-  votesCount: number;
+  votesCount?: number; // For vote-based leaderboards
+  currentRizz?: number; // For rizz leaderboard
+  baseRizz?: number; // For rizz leaderboard
+  miningRate?: number; // For rizz leaderboard
 };
 
 type Tab = "weekly" | "alltime" | "toprizz";
@@ -91,7 +94,7 @@ export default function LeaderboardPage() {
             activeTab === "weekly" ? "bg-primary text-bg" : "bg-white text-primary"
           }`}
           aria-label="Show weekly leaderboard"
-          aria-pressed={activeTab === "weekly" ? "true" : "false"}
+          aria-pressed={activeTab === "weekly"}
         >
           Weekly
         </button>
@@ -101,8 +104,8 @@ export default function LeaderboardPage() {
           className={`px-3 py-1 rounded-full text-sm font-medium ${
             activeTab === "alltime" ? "bg-primary text-bg" : "bg-white text-primary"
           }`}
-          aria-label="Show all-time votes leaderboard"
-          aria-pressed={activeTab === "alltime" ? "true" : "false"}
+          aria-label="Show all-time leaderboard"
+          aria-pressed={activeTab === "alltime"}
         >
           All-Time
         </button>
@@ -113,7 +116,7 @@ export default function LeaderboardPage() {
             activeTab === "toprizz" ? "bg-primary text-bg" : "bg-white text-primary"
           }`}
           aria-label="Show top rizz leaderboard"
-          aria-pressed={activeTab === "toprizz" ? "true" : "false"}
+          aria-pressed={activeTab === "toprizz"}
         >
           Top Rizz
         </button>
@@ -152,9 +155,16 @@ export default function LeaderboardPage() {
                   level={e.level}
                   ownerName={e.username}
                   pfpUrl={e.pfp_url}
-                  votes={e.votesCount}
+                  votes={activeTab === "toprizz" ? undefined : e.votesCount}
+                  miningRate={activeTab === "toprizz" ? e.miningRate : undefined}
                 />
               </div>
+              {activeTab === "toprizz" && e.currentRizz && (
+                <div className="text-right">
+                  <div className="text-lg font-bold text-primary">{e.currentRizz}</div>
+                  <div className="text-xs text-primary/70">RIZZ</div>
+                </div>
+              )}
             </div>
           ))}
         </section>

@@ -9,8 +9,10 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 
 type HouseState = {
   level: number;
-  rizz_point: number;
-  last_claim: string;
+  base_rizz: number;
+  mining_rate: number;
+  last_tick: string;
+  current_points?: number;
   updated_at?: string;
   created_at?: string;
 };
@@ -107,8 +109,12 @@ export default function DashboardPage() {
         }
         const houseData = {
           level: data.house.level,
-          rizz_point: data.house.rizz_point,
-          last_claim: data.house.last_claim
+          base_rizz: data.house.base_rizz,
+          mining_rate: data.house.mining_rate,
+          last_tick: data.house.last_tick,
+          current_points: data.house.current_points,
+          updated_at: data.house.updated_at,
+          created_at: data.house.created_at
         };
         setHouse(houseData);
 
@@ -184,8 +190,12 @@ export default function DashboardPage() {
       if (houseRes.ok && houseData.house) {
         const house = {
           level: houseData.house.level,
-          rizz_point: houseData.house.rizz_point,
-          last_claim: houseData.house.last_claim
+          base_rizz: houseData.house.base_rizz,
+          mining_rate: houseData.house.mining_rate,
+          last_tick: houseData.house.last_tick,
+          current_points: houseData.house.current_points,
+          updated_at: houseData.house.updated_at,
+          created_at: houseData.house.created_at
         };
         setHouse(house);
         if (typeof window !== 'undefined') {
@@ -235,8 +245,9 @@ export default function DashboardPage() {
             if (payload.new) {
               const updatedHouse = {
                 level: payload.new.level,
-                rizz_point: payload.new.rizz_point,
-                last_claim: payload.new.last_claim,
+                base_rizz: payload.new.base_rizz,
+                mining_rate: payload.new.mining_rate,
+                last_tick: payload.new.last_tick,
                 updated_at: payload.new.updated_at,
                 created_at: payload.new.created_at
               };
@@ -319,13 +330,9 @@ export default function DashboardPage() {
 
   const displayRizz = useMemo(() => {
     if (!house) return 0;
-    const base = house.rizz_point;
-    const lastClaim = new Date(house.last_claim);
-    const hours = (now.getTime() - lastClaim.getTime()) / 3_600_000;
-    const rate = miningRate(house.level);
-    const mined = Math.max(0, Math.floor(hours * rate));
-    return base + mined;
-  }, [house, now]);
+    // Use current_points calculated server-side
+    return house.current_points || house.base_rizz || 0;
+  }, [house]);
 
   const handleClaim = async () => {
     if (!user) return;
@@ -341,8 +348,12 @@ export default function DashboardPage() {
     }
     const updatedHouse = {
       level: data.house.level,
-      rizz_point: data.house.rizz_point,
-      last_claim: data.house.last_claim
+      base_rizz: data.house.base_rizz,
+      mining_rate: data.house.mining_rate,
+      last_tick: data.house.last_tick,
+      current_points: data.house.base_rizz, // After claim, current = base
+      updated_at: data.house.updated_at,
+      created_at: data.house.created_at
     };
     setHouse(updatedHouse);
     if (typeof window !== 'undefined') {
@@ -364,8 +375,12 @@ export default function DashboardPage() {
     }
     const updatedHouse = {
       level: data.house.level,
-      rizz_point: data.house.rizz_point,
-      last_claim: data.house.last_claim
+      base_rizz: data.house.base_rizz,
+      mining_rate: data.house.mining_rate,
+      last_tick: data.house.last_tick,
+      current_points: data.house.base_rizz, // After upgrade, current = base
+      updated_at: data.house.updated_at,
+      created_at: data.house.created_at
     };
     setHouse(updatedHouse);
     if (typeof window !== 'undefined') {
@@ -429,36 +444,21 @@ export default function DashboardPage() {
       <section className="rounded-3xl bg-white shadow-md p-4 text-center">
         <div className="text-sm font-semibold text-primary">Mining Status</div>
         <div className="text-xs text-primary/70 mt-1">
-          Mining rate: {miningRate(house.level)} RIZZ/hour
+          Mining rate: {house.mining_rate} RIZZ/hour
         </div>
         <div className="text-xs text-primary/60 mt-1">
-          Next claim: {(() => {
-            const remainingMs = 3600000 - (now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime());
-            const hours = Math.floor(Math.max(0, remainingMs) / 3600000);
-            const minutes = Math.floor((Math.max(0, remainingMs) % 3600000) / 60000);
-            const seconds = Math.floor((Math.max(0, remainingMs) % 60000) / 1000);
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-          })()}
+          Points accumulate automatically
         </div>
         <div className="text-xs text-primary/50 mt-1">
-          Earned: ~{(() => {
-            const elapsedMs = now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime();
-            const elapsedHours = Math.max(0, elapsedMs) / 3600000;
-            return (miningRate(house.level) * elapsedHours).toFixed(2);
-          })()} RIZZ
+          Current: {displayRizz} RIZZ
         </div>
         <div className="mt-2">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-primary h-2 rounded-full transition-all duration-1000"
-              style={{
-                width: `${Math.min(100, Math.max(0, ((now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime()) / 3600000) * 100))}%`
-              }}
-            ></div>
-          </div>
-          <div className="text-xs text-primary/50 mt-1">
-            {Math.min(100, Math.max(0, ((now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime()) / 3600000) * 100)).toFixed(1)}% to claim
-          </div>
+          <button
+            onClick={handleClaim}
+            className="w-full py-2 rounded-full bg-primary text-bg font-semibold text-sm shadow-md"
+          >
+            CLAIM ALL
+          </button>
         </div>
       </section>
 
@@ -483,12 +483,6 @@ export default function DashboardPage() {
       <section className="mt-3 flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={handleClaim}
-            className="w-full py-2 rounded-full bg-primary text-bg font-semibold text-sm shadow-md"
-          >
-            CLAIM
-          </button>
-          <button
             onClick={handleUpgrade}
             disabled={displayRizz < nextUpgradeCost(house.level)}
             className={`w-full py-2 rounded-full font-semibold text-sm shadow-md ${
@@ -499,14 +493,14 @@ export default function DashboardPage() {
           >
             UPGRADE ({nextUpgradeCost(house.level)} RIZZ)
           </button>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={handleExplore}
             className="w-full py-2 rounded-full bg-primary text-bg font-semibold text-sm shadow-md"
           >
             EXPLORE HOUSES
           </button>
+        </div>
+        <div className="grid grid-cols-1 gap-3">
           <button
             onClick={handleMyStay}
             className="w-full py-2 rounded-full bg-primary text-bg font-semibold text-sm shadow-md"

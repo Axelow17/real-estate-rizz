@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
     const { data: house, error } = await supabaseServer
       .from("houses")
-      .select("level, total_votes, rizz_point")
+      .select("level, total_votes, base_rizz, mining_rate, last_tick, updated_at, created_at")
       .eq("fid", fid)
       .single();
 
@@ -16,7 +16,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "House not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ house });
+    // Calculate current points server-side
+    const now = new Date();
+    const lastTick = new Date(house.last_tick);
+    const hoursDiff = (now.getTime() - lastTick.getTime()) / (1000 * 60 * 60);
+    const minedPoints = Math.max(0, Math.floor(hoursDiff * house.mining_rate));
+    const current_points = house.base_rizz + minedPoints;
+
+    return NextResponse.json({
+      house: {
+        ...house,
+        current_points
+      }
+    });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
