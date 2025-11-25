@@ -43,12 +43,15 @@ CREATE TABLE stays (
 
 -- Indexes for performance
 CREATE INDEX idx_players_last_seen ON players(last_seen);
+CREATE INDEX idx_houses_fid ON houses(fid); -- For real-time subscriptions
 CREATE INDEX idx_houses_level ON houses(level);
 CREATE INDEX idx_houses_rizz_point ON houses(rizz_point);
+CREATE INDEX idx_houses_updated_at ON houses(updated_at DESC); -- For real-time ordering
 CREATE INDEX idx_votes_host_fid_voted_at ON votes(host_fid, voted_at DESC);
 CREATE INDEX idx_votes_voted_at ON votes(voted_at DESC);
 CREATE INDEX idx_stays_guest_fid_end_at ON stays(guest_fid, end_at) WHERE end_at IS NULL;
-CREATE INDEX idx_stays_host_fid_start_at ON stays(host_fid, start_at DESC);
+CREATE INDEX idx_stays_host_fid_start_at ON stays(host_fid, start_at DESC); -- For ordering stays
+CREATE INDEX idx_stays_start_at ON stays(start_at DESC); -- For real-time stays queries
 
 -- Function to update updated_at on houses
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -83,6 +86,11 @@ CREATE TRIGGER update_player_last_seen_on_stay
     AFTER INSERT ON stays
     FOR EACH ROW EXECUTE FUNCTION update_last_seen();
 
+-- Additional constraints for data integrity
+ALTER TABLE houses ADD CONSTRAINT houses_level_max CHECK (level <= 10);
+ALTER TABLE houses ADD CONSTRAINT houses_rizz_point_positive CHECK (rizz_point >= 0);
+ALTER TABLE votes ADD CONSTRAINT votes_not_self_vote CHECK (voter_fid != host_fid);
+ALTER TABLE stays ADD CONSTRAINT stays_not_self_stay CHECK (guest_fid != host_fid);
 -- Data migration for existing houses (run after schema creation if upgrading)
 -- Update existing houses to have last_claim set to NOW() if null
 -- This allows existing users to claim immediately and fixes the NaN timer issue
@@ -94,3 +102,13 @@ WHERE last_claim IS NULL;
 UPDATE houses
 SET updated_at = COALESCE(updated_at, created_at, NOW())
 WHERE updated_at IS NULL;
+
+-- Performance optimizations
+-- Enable Row Level Security (RLS) for better security (optional)
+-- ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE houses ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE stays ENABLE ROW LEVEL SECURITY;
+
+-- Vacuum and analyze for optimal performance (run periodically)
+-- VACUUM ANALYZE players, houses, votes, stays;
