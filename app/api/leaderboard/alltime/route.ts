@@ -7,7 +7,7 @@ export async function GET() {
       .from("votes")
       .select(
         `host_fid,
-         players:players!votes_host_fid_fkey (username, pfp_url),
+         players:players (username, pfp_url),
          houses:houses (level)`
       );
     if (error) {
