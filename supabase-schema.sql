@@ -139,13 +139,64 @@ ALTER TABLE houses ADD CONSTRAINT houses_rizz_point_positive CHECK (rizz_point >
 ALTER TABLE votes ADD CONSTRAINT votes_not_self_vote CHECK (voter_fid != host_fid);
 ALTER TABLE stays ADD CONSTRAINT stays_not_self_stay CHECK (guest_fid != host_fid);
 
--- Performance optimizations
--- Enable Row Level Security (RLS) for better security (optional)
--- ALTER TABLE players ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE houses ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE stays ENABLE ROW LEVEL SECURITY;
+-- Enable Row Level Security (RLS) for better security
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE houses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stays ENABLE ROW LEVEL SECURITY;
 
+-- RLS Policies for players table
+-- Allow users to read their own profile
+CREATE POLICY "Users can view own profile" ON players
+    FOR SELECT USING (fid = current_setting('request.jwt.claims', true)::json->>'fid'::int);
+
+-- Allow users to update their own profile
+CREATE POLICY "Users can update own profile" ON players
+    FOR UPDATE USING (fid = current_setting('request.jwt.claims', true)::json->>'fid'::int);
+
+-- Allow inserts for new users (handled by API)
+CREATE POLICY "Allow profile creation" ON players
+    FOR INSERT WITH CHECK (true);
+
+-- RLS Policies for houses table
+-- Allow everyone to read all houses (for leaderboard, exploration)
+CREATE POLICY "Everyone can view houses" ON houses
+    FOR SELECT USING (true);
+
+-- Allow users to update their own house
+CREATE POLICY "Users can update own house" ON houses
+    FOR UPDATE USING (fid = current_setting('request.jwt.claims', true)::json->>'fid'::int);
+
+-- Allow users to insert their own house
+CREATE POLICY "Users can create own house" ON houses
+    FOR INSERT WITH CHECK (fid = current_setting('request.jwt.claims', true)::json->>'fid'::int);
+
+-- RLS Policies for votes table
+-- Allow everyone to read votes (for leaderboard calculations)
+CREATE POLICY "Everyone can view votes" ON votes
+    FOR SELECT USING (true);
+
+-- Allow users to insert votes (one per day, enforced by primary key)
+CREATE POLICY "Users can vote once per day" ON votes
+    FOR INSERT WITH CHECK (voter_fid = current_setting('request.jwt.claims', true)::json->>'fid'::int);
+
+-- RLS Policies for stays table
+-- Allow users to view stays where they are guest or host
+CREATE POLICY "Users can view own stays" ON stays
+    FOR SELECT USING (
+        guest_fid = current_setting('request.jwt.claims', true)::json->>'fid'::int OR
+        host_fid = current_setting('request.jwt.claims', true)::json->>'fid'::int
+    );
+
+-- Allow users to start stays at other houses
+CREATE POLICY "Users can start stays" ON stays
+    FOR INSERT WITH CHECK (guest_fid = current_setting('request.jwt.claims', true)::json->>'fid'::int);
+
+-- Allow users to end their own stays
+CREATE POLICY "Users can end own stays" ON stays
+    FOR UPDATE USING (guest_fid = current_setting('request.jwt.claims', true)::json->>'fid'::int);
+
+-- Performance optimizations
 -- Vacuum and analyze for optimal performance (run periodically)
 -- VACUUM ANALYZE players, houses, votes, stays;
 
