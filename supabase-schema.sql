@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS players (
   fid INTEGER PRIMARY KEY,                    -- Farcaster user ID
   username TEXT,                              -- Farcaster username
   pfp_url TEXT,                               -- Profile picture URL
+  bio TEXT,                                   -- Profile bio
+  followers INTEGER DEFAULT 0,                -- Number of followers
   last_seen TIMESTAMPTZ DEFAULT NOW()         -- Last activity timestamp
 );
 
