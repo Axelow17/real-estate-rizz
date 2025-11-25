@@ -5,7 +5,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Players table
-CREATE TABLE players (
+CREATE TABLE IF NOT EXISTS players (
   fid INTEGER PRIMARY KEY,
   username TEXT,
   pfp_url TEXT,
@@ -13,7 +13,7 @@ CREATE TABLE players (
 );
 
 -- Houses table
-CREATE TABLE houses (
+CREATE TABLE IF NOT EXISTS houses (
   fid INTEGER PRIMARY KEY REFERENCES players(fid) ON DELETE CASCADE,
   level INTEGER DEFAULT 1 CHECK (level >= 1),
   base_rizz INTEGER DEFAULT 0 CHECK (base_rizz >= 0),  -- claimed points only (mining progress calculated server-side)
@@ -25,7 +25,7 @@ CREATE TABLE houses (
 );
 
 -- Votes table (one vote per voter per day)
-CREATE TABLE votes (
+CREATE TABLE IF NOT EXISTS votes (
   voter_fid INTEGER REFERENCES players(fid) ON DELETE CASCADE,
   host_fid INTEGER REFERENCES houses(fid) ON DELETE CASCADE,
   voted_at DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -33,7 +33,7 @@ CREATE TABLE votes (
 );
 
 -- Stays table
-CREATE TABLE stays (
+CREATE TABLE IF NOT EXISTS stays (
   id SERIAL PRIMARY KEY,
   guest_fid INTEGER REFERENCES players(fid) ON DELETE CASCADE,
   host_fid INTEGER REFERENCES houses(fid) ON DELETE CASCADE,
@@ -43,16 +43,16 @@ CREATE TABLE stays (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_players_last_seen ON players(last_seen);
-CREATE INDEX idx_houses_fid ON houses(fid); -- For real-time subscriptions
-CREATE INDEX idx_houses_level ON houses(level);
-CREATE INDEX idx_houses_base_rizz ON houses(base_rizz);
-CREATE INDEX idx_houses_updated_at ON houses(updated_at DESC); -- For real-time ordering
-CREATE INDEX idx_votes_host_fid_voted_at ON votes(host_fid, voted_at DESC);
-CREATE INDEX idx_votes_voted_at ON votes(voted_at DESC);
-CREATE INDEX idx_stays_guest_fid_end_at ON stays(guest_fid, end_at) WHERE end_at IS NULL;
-CREATE INDEX idx_stays_host_fid_start_at ON stays(host_fid, start_at DESC); -- For ordering stays
-CREATE INDEX idx_stays_start_at ON stays(start_at DESC); -- For real-time stays queries
+CREATE INDEX IF NOT EXISTS idx_players_last_seen ON players(last_seen);
+CREATE INDEX IF NOT EXISTS idx_houses_fid ON houses(fid); -- For real-time subscriptions
+CREATE INDEX IF NOT EXISTS idx_houses_level ON houses(level);
+CREATE INDEX IF NOT EXISTS idx_houses_base_rizz ON houses(base_rizz);
+CREATE INDEX IF NOT EXISTS idx_houses_updated_at ON houses(updated_at DESC); -- For real-time ordering
+CREATE INDEX IF NOT EXISTS idx_votes_host_fid_voted_at ON votes(host_fid, voted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_votes_voted_at ON votes(voted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_stays_guest_fid_end_at ON stays(guest_fid, end_at) WHERE end_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_stays_host_fid_start_at ON stays(host_fid, start_at DESC); -- For ordering stays
+CREATE INDEX IF NOT EXISTS idx_stays_start_at ON stays(start_at DESC); -- For real-time stays queries
 
 -- Function to update updated_at on houses
 CREATE OR REPLACE FUNCTION update_updated_at_column()
