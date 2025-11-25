@@ -587,7 +587,7 @@ export default function DashboardPage() {
           <button
             onClick={() => {
               // Share logic
-              const text = `Check out my new house in RealEstate Rizz! 🏠 #RealEstateRizz`;
+              const text = `Check out my new house in RealEstate Rizz! 🏠 #RealEstateRizz https://realestate-full-lrflz05mq-axelow17-gmailcoms-projects.vercel.app`;
               window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
               setShowShareBanner(false);
             }}
@@ -696,7 +696,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => {
-                  const text = `I just ${shareModal.action}d @${shareModal.targetUsername}'s house in RealEstate Rizz! Who's next? 🏠❤️`;
+                  const text = `I just ${shareModal.action}d @${shareModal.targetUsername}'s house in RealEstate Rizz! Who's next? 🏠❤️ https://realestate-full-lrflz05mq-axelow17-gmailcoms-projects.vercel.app`;
                   window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
                   shareModal.onClose();
                 }}
@@ -726,7 +726,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => {
-                  const text = `Just upgraded my house to level ${upgradeModal.newLevel} in RealEstate Rizz! 🏠💪 #RealEstateRizz`;
+                  const text = `Just upgraded my house to level ${upgradeModal.newLevel} in RealEstate Rizz! 🏠💪 #RealEstateRizz https://realestate-full-lrflz05mq-axelow17-gmailcoms-projects.vercel.app`;
                   window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
                   setUpgradeModal({ isOpen: false, newLevel: 0 });
                 }}
