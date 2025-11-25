@@ -23,7 +23,7 @@
     "tags": ["social", "gaming", "real-estate"],
     "heroImageUrl": "https://real-estate-rizz.vercel.app/houses/house1.png",
     "tagline": "Build Your Virtual Empire",
-    "ogTitle": "RealEstate Rizz - Virtual Real Estate Game",
+    "ogTitle": "RealEstate Rizz Game",
     "ogDescription": "Join the fun! Build houses, vote, and earn Rizz points in this Farcaster mini app.",
     "ogImageUrl": "https://real-estate-rizz.vercel.app/houses/house1.png"
   }
