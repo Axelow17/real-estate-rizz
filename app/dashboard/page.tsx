@@ -10,6 +10,8 @@ type HouseState = {
   level: number;
   rizz_point: number;
   last_claim: string;
+  updated_at?: string;
+  created_at?: string;
 };
 
 type Guest = {
@@ -326,7 +328,7 @@ export default function DashboardPage() {
           Mining rate: {miningRate(house.level)} RIZZ/hour
         </div>
         <div className="text-xs text-primary/60 mt-1">
-          Next claim available in: {Math.max(0, Math.floor((3600000 - (now.getTime() - new Date(house.last_claim).getTime())) / 60000))} min
+          Next claim available in: {Math.max(0, Math.floor((3600000 - (now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime())) / 60000))} min
         </div>
       </section>
 
