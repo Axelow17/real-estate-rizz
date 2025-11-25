@@ -9,7 +9,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 
 type HouseState = {
   level: number;
-  base_rizz: number;
+  rizz_point: number;
   mining_rate: number;
   last_tick: string;
   current_points?: number;
@@ -122,7 +122,7 @@ export default function DashboardPage() {
         }
         const houseData = {
           level: data.house.level,
-          base_rizz: data.house.base_rizz,
+          rizz_point: data.house.rizz_point,
           mining_rate: data.house.mining_rate,
           last_tick: data.house.last_tick,
           current_points: data.house.current_points,
@@ -203,7 +203,7 @@ export default function DashboardPage() {
       if (houseRes.ok && houseData.house) {
         const house = {
           level: houseData.house.level,
-          base_rizz: houseData.house.base_rizz,
+          rizz_point: houseData.house.rizz_point,
           mining_rate: houseData.house.mining_rate,
           last_tick: houseData.house.last_tick,
           current_points: houseData.house.current_points,
@@ -258,7 +258,7 @@ export default function DashboardPage() {
             if (payload.new) {
               const updatedHouse = {
                 level: payload.new.level,
-                base_rizz: payload.new.base_rizz,
+                rizz_point: payload.new.rizz_point,
                 mining_rate: payload.new.mining_rate,
                 last_tick: payload.new.last_tick,
                 updated_at: payload.new.updated_at,
@@ -326,10 +326,53 @@ export default function DashboardPage() {
           console.log('Stays channel status:', status);
         });
 
+      // Subscribe to votes updates (for vote counts)
+      const votesChannel = getSupabaseClient()
+        .channel('votes-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'votes'
+          },
+          (payload: any) => {
+            console.log('Votes update:', payload);
+            // Refresh house data when votes change
+            if (payload.eventType === 'INSERT' || payload.eventType === 'DELETE') {
+              setTimeout(() => {
+                fetch("/api/house/info", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ fid: user.fid })
+                }).then(res => res.json()).then(data => {
+                  if (data.house) {
+                    const updatedHouse = {
+                      level: data.house.level,
+                      rizz_point: data.house.rizz_point,
+                      mining_rate: data.house.mining_rate,
+                      last_tick: data.house.last_tick,
+                      current_points: data.house.rizz_point,
+                      updated_at: data.house.updated_at,
+                      created_at: data.house.created_at
+                    };
+                    setHouse(updatedHouse);
+                    localStorage.setItem('dashboard_house', JSON.stringify(updatedHouse));
+                  }
+                }).catch(err => console.error('Failed to refresh house after vote:', err));
+              }, 300);
+            }
+          }
+        )
+        .subscribe((status: any) => {
+          console.log('Votes channel status:', status);
+        });
+
       return () => {
         try {
           getSupabaseClient().removeChannel(houseChannel);
           getSupabaseClient().removeChannel(staysChannel);
+          getSupabaseClient().removeChannel(votesChannel);
         } catch (err) {
           console.error('Error removing channels:', err);
         }
@@ -380,7 +423,7 @@ export default function DashboardPage() {
   const displayRizz = useMemo(() => {
     if (!house) return 0;
     // Use current_points calculated server-side
-    return house.current_points || house.base_rizz || 0;
+    return house.current_points || house.rizz_point || 0;
   }, [house]);
 
   const handleClaim = async () => {
@@ -397,10 +440,10 @@ export default function DashboardPage() {
     }
     const updatedHouse = {
       level: data.house.level,
-      base_rizz: data.house.base_rizz,
+      rizz_point: data.house.rizz_point,
       mining_rate: data.house.mining_rate,
       last_tick: data.house.last_tick,
-      current_points: data.house.base_rizz, // After claim, current = base
+      current_points: data.house.rizz_point, // After claim, current = base
       updated_at: data.house.updated_at,
       created_at: data.house.created_at
     };
@@ -424,10 +467,10 @@ export default function DashboardPage() {
     }
     const updatedHouse = {
       level: data.house.level,
-      base_rizz: data.house.base_rizz,
+      rizz_point: data.house.rizz_point,
       mining_rate: data.house.mining_rate,
       last_tick: data.house.last_tick,
-      current_points: data.house.base_rizz, // After upgrade, current = base
+      current_points: data.house.rizz_point, // After upgrade, current = base
       updated_at: data.house.updated_at,
       created_at: data.house.created_at
     };

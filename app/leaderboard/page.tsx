@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useFarcasterUser } from "@/lib/useFarcasterUser";
 import { HouseCard } from "@/components/HouseCard";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 type LeaderboardEntry = {
   host_fid: number;
@@ -45,6 +46,78 @@ export default function LeaderboardPage() {
       }
     }
     loadLeaderboard();
+  }, [activeTab]);
+
+  // Real-time subscription for leaderboard updates
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const leaderboardChannel = getSupabaseClient()
+        .channel('leaderboard-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'houses'
+          },
+          (payload: any) => {
+            console.log('Leaderboard house update:', payload);
+            // Refresh leaderboard when houses are updated (level changes, etc.)
+            setTimeout(() => {
+              let endpoint = "/api/leaderboard/weekly";
+              if (activeTab === "alltime") endpoint = "/api/leaderboard/alltime";
+              if (activeTab === "toprizz") endpoint = "/api/leaderboard/top-rizz";
+
+              fetch(endpoint).then(res => res.json()).then(data => {
+                if (data.leaderboard) {
+                  setEntries(data.leaderboard);
+                  setFromDate(data.from || null);
+                }
+              }).catch(err => console.error('Failed to refresh leaderboard:', err));
+            }, 200);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'votes'
+          },
+          (payload: any) => {
+            console.log('Leaderboard vote update:', payload);
+            // Refresh leaderboard when votes change
+            setTimeout(() => {
+              let endpoint = "/api/leaderboard/weekly";
+              if (activeTab === "alltime") endpoint = "/api/leaderboard/alltime";
+              if (activeTab === "toprizz") endpoint = "/api/leaderboard/top-rizz";
+
+              fetch(endpoint).then(res => res.json()).then(data => {
+                if (data.leaderboard) {
+                  setEntries(data.leaderboard);
+                  setFromDate(data.from || null);
+                }
+              }).catch(err => console.error('Failed to refresh leaderboard:', err));
+            }, 200);
+          }
+        )
+        .subscribe((status: any) => {
+          console.log('Leaderboard channel status:', status);
+        });
+
+      return () => {
+        try {
+          getSupabaseClient().removeChannel(leaderboardChannel);
+        } catch (err) {
+          console.error('Error removing leaderboard channel:', err);
+        }
+      };
+    } catch (err) {
+      console.error('Error setting up real-time leaderboard subscription:', err);
+      return () => {};
+    }
   }, [activeTab]);
 
   if (loading) {
@@ -94,7 +167,7 @@ export default function LeaderboardPage() {
             activeTab === "weekly" ? "bg-primary text-bg" : "bg-white text-primary"
           }`}
           aria-label="Show weekly leaderboard"
-          aria-pressed={activeTab === "weekly"}
+          aria-pressed={activeTab === "weekly" ? true : false}
         >
           Weekly
         </button>
@@ -105,7 +178,7 @@ export default function LeaderboardPage() {
             activeTab === "alltime" ? "bg-primary text-bg" : "bg-white text-primary"
           }`}
           aria-label="Show all-time leaderboard"
-          aria-pressed={activeTab === "alltime"}
+          aria-pressed={activeTab === "alltime" ? true : false}
         >
           All-Time
         </button>
@@ -116,7 +189,7 @@ export default function LeaderboardPage() {
             activeTab === "toprizz" ? "bg-primary text-bg" : "bg-white text-primary"
           }`}
           aria-label="Show top rizz leaderboard"
-          aria-pressed={activeTab === "toprizz"}
+          aria-pressed={activeTab === "toprizz" ? true : false}
         >
           Top Rizz
         </button>

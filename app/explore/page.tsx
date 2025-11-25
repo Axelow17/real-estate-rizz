@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useFarcasterUser } from "@/lib/useFarcasterUser";
 import { HouseCard } from "@/components/HouseCard";
 import { miningRate } from "@/lib/economy";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 type ExploreHouse = {
   fid: number;
@@ -44,6 +45,55 @@ export default function ExplorePage() {
       }
     }
     load();
+  }, [user, loading, mode]);
+
+  // Real-time subscription for houses updates
+  useEffect(() => {
+    if (!user || loading || typeof window === 'undefined') return;
+
+    try {
+      const housesChannel = getSupabaseClient()
+        .channel('explore-houses-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'houses'
+          },
+          (payload: any) => {
+            console.log('Explore house update:', payload);
+            if (payload.new) {
+              // Refresh the houses list when any house is updated
+              setTimeout(() => {
+                fetch("/api/houses/explore", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ mode, excludeFid: user.fid })
+                }).then(res => res.json()).then(data => {
+                  if (data.houses) {
+                    setHouses(data.houses);
+                  }
+                }).catch(err => console.error('Failed to refresh houses:', err));
+              }, 200);
+            }
+          }
+        )
+        .subscribe((status: any) => {
+          console.log('Explore houses channel status:', status);
+        });
+
+      return () => {
+        try {
+          getSupabaseClient().removeChannel(housesChannel);
+        } catch (err) {
+          console.error('Error removing houses channel:', err);
+        }
+      };
+    } catch (err) {
+      console.error('Error setting up real-time houses subscription:', err);
+      return () => {};
+    }
   }, [user, loading, mode]);
 
   const handleVote = async (host_fid: number, targetUsername: string) => {

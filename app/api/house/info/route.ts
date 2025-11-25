@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
     const { data: house, error } = await supabaseServer
       .from("houses")
-      .select("level, total_votes, base_rizz, mining_rate, last_tick, updated_at, created_at")
+      .select("level, total_votes, rizz_point, mining_rate, last_tick, updated_at, created_at")
       .eq("fid", fid)
       .single();
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const lastTick = new Date(house.last_tick);
     const hoursDiff = (now.getTime() - lastTick.getTime()) / (1000 * 60 * 60);
     const minedPoints = Math.max(0, Math.floor(hoursDiff * house.mining_rate));
-    const current_points = house.base_rizz + minedPoints;
+    const current_points = house.rizz_point + minedPoints;
 
     return NextResponse.json({
       house: {
