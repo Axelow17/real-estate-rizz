@@ -42,21 +42,27 @@ export default function ProfilePage() {
         if (!targetFid) throw new Error("Invalid FID");
 
         // Fetch from Neynar directly
+        console.log('Fetching Neynar data for FID:', targetFid);
         const neynarResp = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${targetFid}`, {
           headers: {
             'api_key': process.env.NEXT_PUBLIC_NEYNAR_API_KEY || 'NEYNAR_API_KEY_MISSING'
           }
         });
+        console.log('Neynar response status:', neynarResp.status);
         let neynarUser = null;
         if (neynarResp.ok) {
           const neynarData = await neynarResp.json();
+          console.log('Neynar data:', neynarData);
           neynarUser = neynarData.users?.[0];
+        } else {
+          console.error('Neynar fetch failed:', await neynarResp.text());
         }
         // If not found on Neynar, use default
         const username = neynarUser?.username || `fid:${targetFid}`;
         const pfp_url = neynarUser?.pfp_url;
         const bio = neynarUser?.profile?.bio?.text;
         const followers = neynarUser?.follower_count || 0;
+        console.log('Final profile data:', { username, pfp_url, bio, followers });
 
         // Current stay (if user is guest) - initialize early
         let currentStay = null;
