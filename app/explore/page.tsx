@@ -1,0 +1,221 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useFarcasterUser } from "@/lib/useFarcasterUser";
+import { HouseCard } from "@/components/HouseCard";
+import { miningRate } from "@/lib/economy";
+
+type ExploreHouse = {
+  fid: number;
+  level: number;
+  total_votes: number;
+  players?: {
+    username: string;
+    pfp_url?: string;
+  } | null;
+};
+
+export default function ExplorePage() {
+  const { user, loading, error } = useFarcasterUser();
+  const [houses, setHouses] = useState<ExploreHouse[]>([]);
+  const [mode, setMode] = useState<"popular" | "level" | "followers" | "trending">("popular");
+  const [loadingHouses, setLoadingHouses] = useState(true);
+  const [shareModal, setShareModal] = useState({ isOpen: false, onClose: () => {}, action: 'vote' as 'vote' | 'stay', targetUsername: '', targetFid: 0 });
+
+  useEffect(() => {
+    if (!user || loading) return;
+    async function load() {
+      setLoadingHouses(true);
+      try {
+        if (!user) return;
+        const res = await fetch("/api/houses/explore", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode, excludeFid: user.fid })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          console.error(data);
+          return;
+        }
+        setHouses(data.houses || []);
+      } finally {
+        setLoadingHouses(false);
+      }
+    }
+    load();
+  }, [user, loading, mode]);
+
+  const handleVote = async (host_fid: number, targetUsername: string) => {
+    if (!user) return;
+    const res = await fetch("/api/house/vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ voter_fid: user.fid, host_fid })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Vote failed");
+      return;
+    }
+    setHouses(prev =>
+      prev.map(h => h.fid === host_fid ? { ...h, total_votes: (h.total_votes || 0) + 1 } : h)
+    );
+    // Open share modal
+    setShareModal({
+      isOpen: true,
+      onClose: () => setShareModal({ ...shareModal, isOpen: false }),
+      action: 'vote',
+      targetUsername,
+      targetFid: host_fid
+    });
+  };
+
+  const handleStay = async (host_fid: number, targetUsername: string) => {
+    if (!user) return;
+    const res = await fetch("/api/stay/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guest_fid: user.fid, host_fid })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Failed to start stay");
+      return;
+    }
+    alert("Kamu sekarang menginap di rumah ini!");
+    // Open share modal
+    setShareModal({
+      isOpen: true,
+      onClose: () => setShareModal({ ...shareModal, isOpen: false }),
+      action: 'stay',
+      targetUsername,
+      targetFid: host_fid
+    });
+  };
+
+  if (loading || !user) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <div className="text-sm text-primary/70">Loading explore…</div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <div className="text-sm text-red-500">{error}</div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="flex flex-col gap-4">
+      <header className="text-center">
+        <h1 className="text-2xl font-bold">Explore Houses</h1>
+        <p className="text-xs text-primary/70 mt-1">
+          Vote & menginap di rumah pemain lain.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <button
+          onClick={() => setMode("popular")}
+          className={`py-1.5 rounded-full border ${
+            mode === "popular"
+              ? "bg-primary text-bg border-primary"
+              : "border-primary/30 text-primary/70"
+          }`}
+        >
+          Popular
+        </button>
+        <button
+          onClick={() => setMode("level")}
+          className={`py-1.5 rounded-full border ${
+            mode === "level"
+              ? "bg-primary text-bg border-primary"
+              : "border-primary/30 text-primary/70"
+          }`}
+        >
+          Highest Level
+        </button>
+        <button
+          onClick={() => setMode("followers")}
+          className={`py-1.5 rounded-full border ${
+            mode === "followers"
+              ? "bg-primary text-bg border-primary"
+              : "border-primary/30 text-primary/70"
+          }`}
+        >
+          By Followers
+        </button>
+        <button
+          onClick={() => setMode("trending")}
+          className={`py-1.5 rounded-full border ${
+            mode === "trending"
+              ? "bg-primary text-bg border-primary"
+              : "border-primary/30 text-primary/70"
+          }`}
+        >
+          Trending
+        </button>
+      </div>
+
+      {loadingHouses && (
+        <div className="text-xs text-primary/70">Loading houses…</div>
+      )}
+
+      <section className="space-y-4 pb-6">
+        {houses.map(h => (
+          <div key={h.fid} className="space-y-2">
+            <HouseCard
+              fid={h.fid}
+              level={h.level}
+              ownerName={h.players?.username}
+              votes={h.total_votes}
+              miningRate={miningRate(h.level)}
+              onVote={() => handleVote(h.fid, h.players?.username || `fid:${h.fid}`)}
+              onStay={() => handleStay(h.fid, h.players?.username || `fid:${h.fid}`)}
+            />
+          </div>
+        ))}
+        {!loadingHouses && houses.length === 0 && (
+          <div className="text-xs text-primary/60">
+            Belum ada rumah lain yang terdaftar.
+          </div>
+        )}
+      </section>
+
+      {/* Share Modal */}
+      {shareModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl p-6 max-w-sm mx-4 text-center space-y-4">
+            <h3 className="font-semibold text-lg">Share This Action!</h3>
+            <p className="text-sm text-primary/70">
+              You just {shareModal.action}d @{shareModal.targetUsername}'s house. Share it!
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={shareModal.onClose}
+                className="flex-1 py-2 border border-primary text-primary rounded-full"
+              >
+                Skip
+              </button>
+              <button
+                onClick={() => {
+                  const text = `I just ${shareModal.action}d @${shareModal.targetUsername}'s house in RealEstate Rizz! Who's next? 🏠❤️`;
+                  window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
+                  shareModal.onClose();
+                }}
+                className="flex-1 py-2 bg-primary text-bg rounded-full font-semibold"
+              >
+                Share
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}
