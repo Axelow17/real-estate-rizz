@@ -10,8 +10,7 @@ export async function POST(req: Request) {
     .from("stays")
     .select(
       `id, host_fid, start_at, end_at,
-       host:players!stays_host_fid_fkey (username),
-       house:houses (level)`
+       house:houses (level, players!houses_fid_fkey (username))`
     )
     .eq("guest_fid", guest_fid)
     .is("end_at", null)

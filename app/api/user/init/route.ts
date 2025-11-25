@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       const now = new Date();
       const { data: newHouse, error: newErr } = await supabaseServer
         .from("houses")
-        .insert({ fid, level: 1, rizz_point: 0, last_claim: now.toISOString() })
+        .insert({ fid, level: 1, base_rizz: 0, mining_rate: 8, last_tick: now.toISOString() })
         .select()
         .single();
       if (newErr) {
