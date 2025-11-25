@@ -48,6 +48,19 @@ export default function DashboardPage() {
   const [shareModal, setShareModal] = useState<ShareModalProps>({ isOpen: false, onClose: () => {}, action: 'vote', targetUsername: '', targetFid: 0 });
   const [upgradeModal, setUpgradeModal] = useState({ isOpen: false, newLevel: 0 });
   const [now, setNow] = useState<Date>(new Date());
+  const [miningProgress, setMiningProgress] = useState<{ earned: number; timeRemaining: number; percentage: number }>({
+    earned: 0,
+    timeRemaining: 0,
+    percentage: 0
+  });
+
+  // Format time remaining as HH:MM:SS
+  const formatTimeRemaining = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 2000);
@@ -328,6 +341,42 @@ export default function DashboardPage() {
     }
   }, [user, userLoading]);
 
+  // Real-time mining progress updates
+  useEffect(() => {
+    if (!house) return;
+
+    const updateMiningProgress = () => {
+      const now = new Date();
+      const lastTick = new Date(house.last_tick);
+      const hoursDiff = (now.getTime() - lastTick.getTime()) / (1000 * 60 * 60);
+
+      // Calculate earned points since last tick
+      const earned = Math.max(0, Math.floor(hoursDiff * house.mining_rate));
+
+      // Assume claim threshold is 10 RIZZ (you can adjust this)
+      const claimThreshold = 10;
+      const percentage = Math.min(100, (earned / claimThreshold) * 100);
+
+      // Time remaining until next claim (in seconds)
+      const remainingPoints = Math.max(0, claimThreshold - earned);
+      const timeRemaining = Math.max(0, (remainingPoints / house.mining_rate) * 3600);
+
+      setMiningProgress({
+        earned: earned / 100, // Convert to RIZZ (assuming 100 points = 1 RIZZ)
+        timeRemaining,
+        percentage
+      });
+    };
+
+    // Update immediately
+    updateMiningProgress();
+
+    // Update every second for real-time display
+    const interval = setInterval(updateMiningProgress, 1000);
+
+    return () => clearInterval(interval);
+  }, [house]);
+
   const displayRizz = useMemo(() => {
     if (!house) return 0;
     // Use current_points calculated server-side
@@ -447,6 +496,23 @@ export default function DashboardPage() {
           Mining rate: {house.mining_rate} RIZZ/hour
         </div>
         <div className="text-xs text-primary/60 mt-1">
+          Next claim: {formatTimeRemaining(miningProgress.timeRemaining)}
+        </div>
+        <div className="text-xs text-primary/60 mt-1">
+          Earned: ~{miningProgress.earned.toFixed(2)} RIZZ
+        </div>
+        <div className="mt-3">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className={`bg-accent h-2 rounded-full transition-all duration-1000 ease-linear`}
+              style={{ width: `${miningProgress.percentage}%` }}
+            ></div>
+          </div>
+          <div className="text-xs text-primary/50 mt-1">
+            {miningProgress.percentage.toFixed(1)}% to claim
+          </div>
+        </div>
+        <div className="text-xs text-primary/50 mt-2">
           Points accumulate automatically
         </div>
         <div className="text-xs text-primary/50 mt-1">
