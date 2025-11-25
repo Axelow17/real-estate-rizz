@@ -8,7 +8,15 @@ export const getSupabaseClient = () => {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Supabase environment variables not found')
+      console.error('Supabase environment variables not found. Real-time features will be disabled.')
+      // Return a mock client that doesn't crash
+      return {
+        channel: () => ({
+          on: () => ({ subscribe: () => {} }),
+          subscribe: () => {}
+        }),
+        removeChannel: () => {}
+      } as any
     }
 
     supabaseClient = createClient(supabaseUrl, supabaseAnonKey)

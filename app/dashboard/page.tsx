@@ -216,89 +216,105 @@ export default function DashboardPage() {
 
   // Real-time subscriptions for instant updates
   useEffect(() => {
-    if (!user || userLoading) return;
+    if (!user || userLoading || typeof window === 'undefined') return;
 
-    // Subscribe to house updates
-    const houseChannel = getSupabaseClient()
-      .channel('house-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'houses',
-          filter: `fid=eq.${user.fid}`
-        },
-        (payload) => {
-          console.log('House update:', payload);
-          if (payload.new) {
-            const updatedHouse = {
-              level: payload.new.level,
-              rizz_point: payload.new.rizz_point,
-              last_claim: payload.new.last_claim
-            };
-            setHouse(updatedHouse);
-            localStorage.setItem('dashboard_house', JSON.stringify(updatedHouse));
+    try {
+      // Subscribe to house updates
+      const houseChannel = getSupabaseClient()
+        .channel('house-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'houses',
+            filter: `fid=eq.${user.fid}`
+          },
+          (payload: any) => {
+            console.log('House update:', payload);
+            if (payload.new) {
+              const updatedHouse = {
+                level: payload.new.level,
+                rizz_point: payload.new.rizz_point,
+                last_claim: payload.new.last_claim,
+                updated_at: payload.new.updated_at,
+                created_at: payload.new.created_at
+              };
+              setHouse(updatedHouse);
+              localStorage.setItem('dashboard_house', JSON.stringify(updatedHouse));
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe((status: any) => {
+          console.log('House channel status:', status);
+        });
 
-    // Subscribe to stays updates (for guests and current stay)
-    const staysChannel = getSupabaseClient()
-      .channel('stays-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'stays'
-        },
-        (payload) => {
-          console.log('Stays update:', payload);
-          // Refresh guests and current stay data
-          if (payload.eventType === 'INSERT' || payload.eventType === 'DELETE') {
-            // Trigger a refresh of guests and stay data
-            setTimeout(() => {
-              fetch("/api/stay/my-guests", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ host_fid: user.fid })
-              }).then(res => res.json()).then(data => {
-                if (data.guests) {
-                  setGuests(data.guests);
-                  localStorage.setItem('dashboard_guests', JSON.stringify(data.guests));
-                }
-              });
+      // Subscribe to stays updates (for guests and current stay)
+      const staysChannel = getSupabaseClient()
+        .channel('stays-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'stays'
+          },
+          (payload: any) => {
+            console.log('Stays update:', payload);
+            // Refresh guests and current stay data
+            if (payload.eventType === 'INSERT' || payload.eventType === 'DELETE' || payload.eventType === 'UPDATE') {
+              // Trigger a refresh of guests and stay data
+              setTimeout(() => {
+                fetch("/api/stay/my-guests", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ host_fid: user.fid })
+                }).then(res => res.json()).then(data => {
+                  if (data.guests) {
+                    setGuests(data.guests);
+                    localStorage.setItem('dashboard_guests', JSON.stringify(data.guests));
+                  }
+                }).catch(err => console.error('Failed to refresh guests:', err));
 
-              fetch("/api/stay/current", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ guest_fid: user.fid })
-              }).then(res => res.json()).then(data => {
-                if (data.stay) {
-                  const stay = {
-                    host_fid: data.stay.host_fid,
-                    host_username: data.stay.host?.username || `fid:${data.stay.host_fid}`,
-                    start_at: data.stay.start_at
-                  };
-                  setCurrentStay(stay);
-                  localStorage.setItem('dashboard_stay', JSON.stringify(stay));
-                } else {
-                  setCurrentStay(null);
-                  localStorage.removeItem('dashboard_stay');
-                }
-              });
-            }, 500); // Small delay to ensure DB consistency
+                fetch("/api/stay/current", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ guest_fid: user.fid })
+                }).then(res => res.json()).then(data => {
+                  if (data.stay) {
+                    const stay = {
+                      host_fid: data.stay.host_fid,
+                      host_username: data.stay.host?.username || `fid:${data.stay.host_fid}`,
+                      start_at: data.stay.start_at
+                    };
+                    setCurrentStay(stay);
+                    localStorage.setItem('dashboard_stay', JSON.stringify(stay));
+                  } else {
+                    setCurrentStay(null);
+                    localStorage.removeItem('dashboard_stay');
+                  }
+                }).catch(err => console.error('Failed to refresh current stay:', err));
+              }, 500); // Small delay to ensure DB consistency
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe((status: any) => {
+          console.log('Stays channel status:', status);
+        });
 
-    return () => {
-      getSupabaseClient().removeChannel(houseChannel);
-      getSupabaseClient().removeChannel(staysChannel);
-    };
+      return () => {
+        try {
+          getSupabaseClient().removeChannel(houseChannel);
+          getSupabaseClient().removeChannel(staysChannel);
+        } catch (err) {
+          console.error('Error removing channels:', err);
+        }
+      };
+    } catch (err) {
+      console.error('Error setting up real-time subscriptions:', err);
+      // Continue without real-time if it fails
+      return () => {};
+    }
   }, [user, userLoading]);
 
   const displayRizz = useMemo(() => {
