@@ -1,0 +1,27 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjM2MjEsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgyY2Q4NWEwOTMyNjFmNTkyNzA4MDRBNkVBNjk3Q2VBNENlQkVjYWZFIn0",
+    "payload": "eyJkb21haW4iOiJyZWFsLWVzdGF0ZS1yaXp6LnZlcmNlbC5hcHAifQ",
+    "signature": "D7urCIelYBtFc12UkEw/VOE1rkGKMdmDqAP/6s7sLWNfjhyug8pQCTM68XVJ8Gal6eBZxvtFE4RpVwqDtnLrzhs="
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "RealEstate Rizz",
+    "iconUrl": "https://real-estate-rizz.vercel.app/houses/house1.png",
+    "homeUrl": "https://real-estate-rizz.vercel.app/",
+    "imageUrl": "https://real-estate-rizz.vercel.app/houses/house1.png",
+    "buttonTitle": "🏠 Build Your Empire",
+    "splashImageUrl": "https://real-estate-rizz.vercel.app/houses/house1.png",
+    "splashBackgroundColor": "#f5f0ec",
+    "webhookUrl": "https://real-estate-rizz.vercel.app/api/webhook",
+    "subtitle": "Virtual Real Estate Game",
+    "description": "Build and manage your virtual house, vote on others, and earn Rizz points in this social game on Farcaster.",
+    "primaryCategory": "games",
+    "tags": ["social", "gaming", "real-estate"],
+    "heroImageUrl": "https://real-estate-rizz.vercel.app/houses/house1.png",
+    "tagline": "Build Your Virtual Empire",
+    "ogTitle": "RealEstate Rizz - Virtual Real Estate Game",
+    "ogDescription": "Join the fun! Build houses, vote, and earn Rizz points in this Farcaster mini app.",
+    "ogImageUrl": "https://real-estate-rizz.vercel.app/houses/house1.png"
+  }
+}
