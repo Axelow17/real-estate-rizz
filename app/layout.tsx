@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className="bg-bg text-primary">
         <div className="min-h-screen flex justify-center">
-          <div className="w-[424px] h-[695px] px-4 py-6 flex flex-col gap-4 overflow-hidden">
+          <div className="w-full max-w-md px-4 py-6 flex flex-col gap-4">
             {children}
           </div>
         </div>
