@@ -9,7 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fid" }, { status: 400 });
     }
 
-    // First get current points by calculating from base_rizz + mined
+    // First get current points by calculating from rizz_point + mined
     const { data: house } = await supabaseServer
       .from("houses")
       .select("*")
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const lastTick = new Date(house.last_tick);
     const hoursDiff = (now.getTime() - lastTick.getTime()) / (1000 * 60 * 60);
     const minedPoints = Math.max(0, Math.floor(hoursDiff * house.mining_rate));
-    const currentPoints = house.base_rizz + minedPoints;
+    const currentPoints = house.rizz_point + minedPoints;
 
     const cost = upgradeCost(house.level);
     if (currentPoints < cost) {
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       .from("houses")
       .update({
         level: newLevel,
-        base_rizz: currentPoints - cost,
+        rizz_point: currentPoints - cost,
         mining_rate: newMiningRate,
         last_tick: now.toISOString(),
         updated_at: now.toISOString()

@@ -87,12 +87,12 @@ export async function POST(req: Request) {
     }
 
     const totalEarned = baseEarned + Math.floor(guestReward) + Math.floor(hostReward);
-    const newBaseRizz = house.base_rizz + totalEarned;
+    const newBaseRizz = house.rizz_point + totalEarned;
 
     const { data: updatedHouse, error: updateErr } = await supabaseServer
       .from("houses")
       .update({
-        base_rizz: newBaseRizz,
+        rizz_point: newBaseRizz,
         last_tick: now.toISOString(),
         updated_at: now.toISOString()
       })

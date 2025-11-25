@@ -396,6 +396,10 @@ export default function DashboardPage() {
       // Calculate earned points since last tick
       const earned = Math.max(0, Math.floor(hoursDiff * house.mining_rate));
 
+      // Update house current_points for real-time display
+      const currentPoints = house.rizz_point + earned;
+      setHouse(prev => prev ? { ...prev, current_points: currentPoints } : null);
+
       // Assume claim threshold is 10 RIZZ (you can adjust this)
       const claimThreshold = 10;
       const percentage = Math.min(100, (earned / claimThreshold) * 100);
@@ -564,7 +568,12 @@ export default function DashboardPage() {
         <div className="mt-2">
           <button
             onClick={handleClaim}
-            className="w-full py-2 rounded-full bg-primary text-bg font-semibold text-sm shadow-md"
+            disabled={miningProgress.percentage < 100}
+            className={`w-full py-2 rounded-full font-semibold text-sm shadow-md ${
+              miningProgress.percentage >= 100
+                ? 'bg-primary text-bg'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
             CLAIM ALL
           </button>

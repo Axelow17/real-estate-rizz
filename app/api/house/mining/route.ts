@@ -27,11 +27,11 @@ export async function POST(req: Request) {
 
     // Calculate mined points since last tick
     const minedPoints = Math.max(0, Math.floor(hoursDiff * house.mining_rate));
-    const currentPoints = house.base_rizz + minedPoints;
+    const currentPoints = house.rizz_point + minedPoints;
 
     return NextResponse.json({
       current_points: currentPoints,
-      base_rizz: house.base_rizz,
+      rizz_point: house.rizz_point,
       mining_rate: house.mining_rate,
       last_tick: house.last_tick,
       level: house.level
