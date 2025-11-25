@@ -29,28 +29,5 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-  const { data: house, error: houseErr } = await supabaseServer
-    .from("houses")
-    .select("*")
-    .eq("fid", host_fid)
-    .single();
-  if (!house || houseErr) {
-    console.error(houseErr);
-    return NextResponse.json(
-      { error: "Host house not found" },
-      { status: 500 }
-    );
-  }
-  const { error: updateErr } = await supabaseServer
-    .from("houses")
-    .update({ total_votes: (house.total_votes || 0) + 1 })
-    .eq("fid", host_fid);
-  if (updateErr) {
-    console.error(updateErr);
-    return NextResponse.json(
-      { error: "Failed to update votes" },
-      { status: 500 }
-    );
-  }
   return NextResponse.json({ success: true });
 }

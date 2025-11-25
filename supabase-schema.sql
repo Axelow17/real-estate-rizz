@@ -71,8 +71,8 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_houses_updated_at BEFORE UPDATE ON houses
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Function to update last_seen on players
-CREATE OR REPLACE FUNCTION update_last_seen()
+-- Function to update last_seen on players for houses
+CREATE OR REPLACE FUNCTION update_last_seen_houses()
 RETURNS TRIGGER AS $$
 BEGIN
     UPDATE players SET last_seen = NOW() WHERE fid = NEW.fid;
@@ -82,15 +82,33 @@ $$ language 'plpgsql';
 
 CREATE TRIGGER update_player_last_seen_on_house_change
     AFTER INSERT OR UPDATE ON houses
-    FOR EACH ROW EXECUTE FUNCTION update_last_seen();
+    FOR EACH ROW EXECUTE FUNCTION update_last_seen_houses();
+
+-- Function to update last_seen on players for votes
+CREATE OR REPLACE FUNCTION update_last_seen_votes()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE players SET last_seen = NOW() WHERE fid = NEW.voter_fid;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
 
 CREATE TRIGGER update_player_last_seen_on_vote
     AFTER INSERT ON votes
-    FOR EACH ROW EXECUTE FUNCTION update_last_seen();
+    FOR EACH ROW EXECUTE FUNCTION update_last_seen_votes();
+
+-- Function to update last_seen on players for stays
+CREATE OR REPLACE FUNCTION update_last_seen_stays()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE players SET last_seen = NOW() WHERE fid = NEW.guest_fid;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
 
 CREATE TRIGGER update_player_last_seen_on_stay
     AFTER INSERT ON stays
-    FOR EACH ROW EXECUTE FUNCTION update_last_seen();
+    FOR EACH ROW EXECUTE FUNCTION update_last_seen_stays();
 
 -- Function to update total_votes on houses
 CREATE OR REPLACE FUNCTION update_house_total_votes()
