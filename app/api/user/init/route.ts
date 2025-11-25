@@ -17,12 +17,16 @@ export async function POST(req: Request) {
     const fid = body.fid;
     let username = body.username;
     let pfpUrl = body.pfpUrl;
+    let bio: string | undefined;
+    let followers: number = 0;
 
     try {
       const resp = await neynarClient.fetchBulkUsers({ fids: [fid] });
       const u = resp.users[0];
       username = username || u.username;
       pfpUrl = pfpUrl || u.pfp_url;
+      bio = u?.profile?.bio?.text;
+      followers = u?.follower_count || 0;
     } catch (e) {
       console.warn("neynar fetchBulkUsers failed", e);
     }
