@@ -34,6 +34,8 @@ export async function POST(req: Request) {
           fid,
           username: username ?? null,
           pfp_url: pfpUrl ?? null,
+          bio: bio ?? null,
+          followers: followers ?? 0,
           last_seen: new Date().toISOString()
         },
         { onConflict: "fid" }
