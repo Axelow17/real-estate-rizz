@@ -34,7 +34,9 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('ProfilePage useEffect triggered for FID:', fid);
     async function fetchProfile() {
+      console.log('Starting fetchProfile');
       setLoading(true);
       try {
         const targetFid = parseInt(fid);
@@ -118,7 +120,9 @@ export default function ProfilePage() {
           currentStay,
           guests: guestsData.count || 0
         });
+        console.log('FetchProfile completed, data set');
       } catch (err: any) {
+        console.error('Error in fetchProfile:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -160,6 +164,7 @@ export default function ProfilePage() {
   };
 
   if (loading) {
+    console.log('Rendering loading state');
     return (
       <main className="flex flex-col gap-4">
         <header className="relative">
@@ -196,6 +201,7 @@ export default function ProfilePage() {
   }
 
   if (error || !data) {
+    console.log('Rendering error state, error:', error, 'data:', data);
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="text-sm text-red-500">{error || "Profile not found"}</div>
@@ -203,6 +209,7 @@ export default function ProfilePage() {
     );
   }
 
+  console.log('Rendering success state, house level:', data.house.level);
   return (
     <main className="flex flex-col gap-4">
       <header className="relative">
