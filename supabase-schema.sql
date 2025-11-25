@@ -93,17 +93,35 @@ ALTER TABLE houses ADD CONSTRAINT houses_base_rizz_positive CHECK (base_rizz >= 
 ALTER TABLE votes ADD CONSTRAINT votes_not_self_vote CHECK (voter_fid != host_fid);
 ALTER TABLE stays ADD CONSTRAINT stays_not_self_stay CHECK (guest_fid != host_fid);
 -- Data migration for existing houses (run after schema creation if upgrading)
--- Migrate existing rizz_point to base_rizz and set proper mining_rate
-UPDATE houses
-SET 
-  base_rizz = COALESCE(rizz_point, 0),
-  mining_rate = 8 + FLOOR(level * 1.5),  -- Calculate mining rate based on level
-  last_tick = COALESCE(last_claim, updated_at, created_at, NOW())
-WHERE base_rizz = 0 OR base_rizz IS NULL;
+-- Only run this if upgrading from old schema with rizz_point column
+-- For fresh installs, skip this section
 
--- Drop old columns after migration (uncomment when ready)
-ALTER TABLE houses DROP COLUMN IF EXISTS rizz_point;
-ALTER TABLE houses DROP COLUMN IF EXISTS last_claim;
+-- Check if old columns exist before migrating
+DO $$
+BEGIN
+    -- Only migrate if rizz_point column exists (upgrading from old schema)
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'houses' AND column_name = 'rizz_point'
+    ) THEN
+        -- Migrate existing rizz_point to base_rizz and set proper mining_rate
+        UPDATE houses
+        SET
+          base_rizz = COALESCE(rizz_point, 0),
+          mining_rate = 8 + FLOOR(level * 1.5),  -- Calculate mining rate based on level
+          last_tick = COALESCE(last_claim, updated_at, created_at, NOW())
+        WHERE base_rizz = 0 OR base_rizz IS NULL;
+
+        -- Drop old columns after successful migration
+        ALTER TABLE houses DROP COLUMN IF EXISTS rizz_point;
+        ALTER TABLE houses DROP COLUMN IF EXISTS last_claim;
+    ELSE
+        -- Fresh install - just set mining_rate for existing houses
+        UPDATE houses
+        SET mining_rate = 8 + FLOOR(level * 1.5)
+        WHERE mining_rate = 8; -- Only update default values
+    END IF;
+END $$;
 
 -- Performance optimizations
 -- Enable Row Level Security (RLS) for better security (optional)
