@@ -330,6 +330,16 @@ export default function DashboardPage() {
         <div className="text-xs text-primary/60 mt-1">
           Next claim available in: {Math.max(0, Math.floor((3600000 - (now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime())) / 60000))} min
         </div>
+        <div className="mt-3">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-primary h-2 rounded-full transition-all duration-1000"
+              style={{
+                width: `${Math.min(100, Math.max(0, ((now.getTime() - new Date(house.last_claim || house.updated_at || house.created_at || new Date()).getTime()) / 3600000) * 100))}%`
+              }}
+            ></div>
+          </div>
+        </div>
       </section>
 
       {showShareBanner && (
