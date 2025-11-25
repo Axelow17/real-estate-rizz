@@ -5,6 +5,7 @@ import { RizzHeader } from "@/components/RizzHeader";
 import { HouseMainCard } from "@/components/HouseMainCard";
 import { useFarcasterUser } from "@/lib/useFarcasterUser";
 import { miningRate, nextUpgradeCost } from "@/lib/economy";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 type HouseState = {
   level: number;
@@ -210,6 +211,93 @@ export default function DashboardPage() {
     return () => {
       clearTimeout(timer);
       clearInterval(interval);
+    };
+  }, [user, userLoading]);
+
+  // Real-time subscriptions for instant updates
+  useEffect(() => {
+    if (!user || userLoading) return;
+
+    // Subscribe to house updates
+    const houseChannel = getSupabaseClient()
+      .channel('house-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'houses',
+          filter: `fid=eq.${user.fid}`
+        },
+        (payload) => {
+          console.log('House update:', payload);
+          if (payload.new) {
+            const updatedHouse = {
+              level: payload.new.level,
+              rizz_point: payload.new.rizz_point,
+              last_claim: payload.new.last_claim
+            };
+            setHouse(updatedHouse);
+            localStorage.setItem('dashboard_house', JSON.stringify(updatedHouse));
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to stays updates (for guests and current stay)
+    const staysChannel = getSupabaseClient()
+      .channel('stays-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'stays'
+        },
+        (payload) => {
+          console.log('Stays update:', payload);
+          // Refresh guests and current stay data
+          if (payload.eventType === 'INSERT' || payload.eventType === 'DELETE') {
+            // Trigger a refresh of guests and stay data
+            setTimeout(() => {
+              fetch("/api/stay/my-guests", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ host_fid: user.fid })
+              }).then(res => res.json()).then(data => {
+                if (data.guests) {
+                  setGuests(data.guests);
+                  localStorage.setItem('dashboard_guests', JSON.stringify(data.guests));
+                }
+              });
+
+              fetch("/api/stay/current", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ guest_fid: user.fid })
+              }).then(res => res.json()).then(data => {
+                if (data.stay) {
+                  const stay = {
+                    host_fid: data.stay.host_fid,
+                    host_username: data.stay.host?.username || `fid:${data.stay.host_fid}`,
+                    start_at: data.stay.start_at
+                  };
+                  setCurrentStay(stay);
+                  localStorage.setItem('dashboard_stay', JSON.stringify(stay));
+                } else {
+                  setCurrentStay(null);
+                  localStorage.removeItem('dashboard_stay');
+                }
+              });
+            }, 500); // Small delay to ensure DB consistency
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      getSupabaseClient().removeChannel(houseChannel);
+      getSupabaseClient().removeChannel(staysChannel);
     };
   }, [user, userLoading]);
 
