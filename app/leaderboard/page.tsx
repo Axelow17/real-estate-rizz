@@ -12,17 +12,24 @@ type LeaderboardEntry = {
   votesCount: number;
 };
 
+type Tab = "weekly" | "alltime" | "toprizz";
+
 export default function LeaderboardPage() {
   const { user, loading, error } = useFarcasterUser();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [fromDate, setFromDate] = useState<string | null>(null);
   const [loadingBoard, setLoadingBoard] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>("weekly");
 
   useEffect(() => {
     async function loadLeaderboard() {
       setLoadingBoard(true);
       try {
-        const res = await fetch("/api/leaderboard/weekly");
+        let endpoint = "/api/leaderboard/weekly";
+        if (activeTab === "alltime") endpoint = "/api/leaderboard/alltime";
+        if (activeTab === "toprizz") endpoint = "/api/leaderboard/top-rizz";
+
+        const res = await fetch(endpoint);
         const data = await res.json();
         if (!res.ok) {
           console.error(data);
@@ -35,7 +42,7 @@ export default function LeaderboardPage() {
       }
     }
     loadLeaderboard();
-  }, []);
+  }, [activeTab]);
 
   if (loading) {
     return (
@@ -55,20 +62,79 @@ export default function LeaderboardPage() {
 
   return (
     <main className="flex flex-col gap-4 pb-8">
-      <header className="text-center">
-        <h1 className="text-2xl font-bold">Weekly Leaderboard</h1>
-        {fromDate && (
-          <p className="text-[11px] text-primary/70 mt-1">
-            Votes since {fromDate}
-          </p>
-        )}
+      <header className="relative">
+        <button
+          onClick={() => window.location.href = "/dashboard"}
+          className="absolute left-0 top-0 p-2 text-primary/70 hover:text-primary"
+          aria-label="Back to dashboard"
+        >
+          ← Back
+        </button>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">
+            {activeTab === "weekly" ? "Weekly Leaderboard" :
+             activeTab === "alltime" ? "All-Time Votes" : "Top Rizz"}
+          </h1>
+          {activeTab === "weekly" && fromDate && (
+            <p className="text-[11px] text-primary/70 mt-1">
+              Votes since {fromDate}
+            </p>
+          )}
+        </div>
       </header>
 
+      <nav className="flex gap-2 justify-center">
+        <button
+          onClick={() => setActiveTab("weekly")}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab("weekly"); }}
+          className={`px-3 py-1 rounded-full text-sm font-medium ${
+            activeTab === "weekly" ? "bg-primary text-bg" : "bg-white text-primary"
+          }`}
+          aria-label="Show weekly leaderboard"
+          aria-pressed={activeTab === "weekly" ? "true" : "false"}
+        >
+          Weekly
+        </button>
+        <button
+          onClick={() => setActiveTab("alltime")}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab("alltime"); }}
+          className={`px-3 py-1 rounded-full text-sm font-medium ${
+            activeTab === "alltime" ? "bg-primary text-bg" : "bg-white text-primary"
+          }`}
+          aria-label="Show all-time votes leaderboard"
+          aria-pressed={activeTab === "alltime" ? "true" : "false"}
+        >
+          All-Time
+        </button>
+        <button
+          onClick={() => setActiveTab("toprizz")}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab("toprizz"); }}
+          className={`px-3 py-1 rounded-full text-sm font-medium ${
+            activeTab === "toprizz" ? "bg-primary text-bg" : "bg-white text-primary"
+          }`}
+          aria-label="Show top rizz leaderboard"
+          aria-pressed={activeTab === "toprizz" ? "true" : "false"}
+        >
+          Top Rizz
+        </button>
+      </nav>
+
       {loadingBoard ? (
-        <div className="text-xs text-primary/70">Loading data…</div>
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <div key={idx} className="rounded-3xl bg-white shadow-md p-3 flex gap-3 items-center animate-pulse">
+              <div className="w-6 h-6 bg-gray-200 rounded"></div>
+              <div className="flex-1">
+                <div className="w-32 h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="w-24 h-3 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : entries.length === 0 ? (
         <div className="text-xs text-primary/70">
-          Belum ada aktivitas vote minggu ini.
+          {activeTab === "weekly" ? "No voting activity this week yet." :
+           activeTab === "alltime" ? "No votes recorded yet." : "No houses found."}
         </div>
       ) : (
         <section className="space-y-3">
@@ -84,7 +150,8 @@ export default function LeaderboardPage() {
                 <HouseCard
                   fid={e.host_fid}
                   level={e.level}
-                  ownerName={`@${e.username}`}
+                  ownerName={e.username}
+                  pfpUrl={e.pfp_url}
                   votes={e.votesCount}
                 />
               </div>
@@ -95,7 +162,7 @@ export default function LeaderboardPage() {
 
       {user && (
         <footer className="mt-2 text-center text-[11px] text-primary/60">
-          Kamu login sebagai <span className="font-semibold">@{user.username}</span>
+          Logged in as <span className="font-semibold">@{user.username}</span>
         </footer>
       )}
     </main>

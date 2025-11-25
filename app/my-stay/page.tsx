@@ -77,7 +77,7 @@ export default function MyStayPage() {
       <header className="text-center">
         <h1 className="text-2xl font-bold">My Stay</h1>
         <p className="text-xs text-primary/70 mt-1">
-          Status menginap kamu saat ini.
+          Your current stay status.
         </p>
       </header>
 
@@ -86,22 +86,22 @@ export default function MyStayPage() {
       ) : !stay ? (
         <section className="rounded-3xl bg-white shadow-md p-4 text-sm">
           <p>
-            Kamu tidak sedang menginap di rumah siapa pun.
-            Pergi ke <span className="font-semibold">Explore Houses</span> untuk
-            memilih penginapan.
+            You are not staying at anyone's house.
+            Go to <span className="font-semibold">Explore Houses</span> to
+            choose accommodation.
           </p>
         </section>
       ) : (
         <section className="rounded-3xl bg-white shadow-md p-4 space-y-3 text-sm">
           <div>
-            Kamu menginap di rumah{" "}
+            You are staying at{" "}
             <span className="font-semibold">
               @{stay.host?.username || stay.host_fid}
-            </span>
+            </span>'s house
           </div>
-          <div>Level rumah: {stay.house?.level ?? "?"}</div>
+          <div>House level: {stay.house?.level ?? "?"}</div>
           <div>
-            Sejak:{" "}
+            Since:{" "}
             {new Date(stay.start_at).toLocaleString(undefined, {
               hour: "2-digit",
               minute: "2-digit",

@@ -83,7 +83,7 @@ export default function ExplorePage() {
       alert(data.error || "Failed to start stay");
       return;
     }
-    alert("Kamu sekarang menginap di rumah ini!");
+    alert("You are now staying at this house!");
     // Open share modal
     setShareModal({
       isOpen: true,
@@ -112,11 +112,19 @@ export default function ExplorePage() {
 
   return (
     <main className="flex flex-col gap-4">
-      <header className="text-center">
-        <h1 className="text-2xl font-bold">Explore Houses</h1>
-        <p className="text-xs text-primary/70 mt-1">
-          Vote & menginap di rumah pemain lain.
-        </p>
+      <header className="relative">
+        <button
+          onClick={() => window.location.href = "/dashboard"}
+          className="absolute left-0 top-0 p-2 text-primary/70 hover:text-primary"
+        >
+          ← Back
+        </button>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Explore Houses</h1>
+          <p className="text-xs text-primary/70 mt-1">
+            Vote and stay at other players' houses.
+          </p>
+        </div>
       </header>
 
       <div className="grid grid-cols-2 gap-2 text-xs">
@@ -173,6 +181,7 @@ export default function ExplorePage() {
               fid={h.fid}
               level={h.level}
               ownerName={h.players?.username}
+              pfpUrl={h.players?.pfp_url}
               votes={h.total_votes}
               miningRate={miningRate(h.level)}
               onVote={() => handleVote(h.fid, h.players?.username || `fid:${h.fid}`)}
@@ -182,7 +191,7 @@ export default function ExplorePage() {
         ))}
         {!loadingHouses && houses.length === 0 && (
           <div className="text-xs text-primary/60">
-            Belum ada rumah lain yang terdaftar.
+            No other houses registered yet.
           </div>
         )}
       </section>

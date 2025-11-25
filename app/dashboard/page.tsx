@@ -49,6 +49,39 @@ export default function DashboardPage() {
     return () => clearInterval(id);
   }, []);
 
+  // Load cached data on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cachedHouse = localStorage.getItem('dashboard_house');
+      const cachedGuests = localStorage.getItem('dashboard_guests');
+      const cachedStay = localStorage.getItem('dashboard_stay');
+
+      if (cachedHouse) {
+        try {
+          setHouse(JSON.parse(cachedHouse));
+        } catch (e) {
+          console.warn('Failed to parse cached house data');
+        }
+      }
+
+      if (cachedGuests) {
+        try {
+          setGuests(JSON.parse(cachedGuests));
+        } catch (e) {
+          console.warn('Failed to parse cached guests data');
+        }
+      }
+
+      if (cachedStay) {
+        try {
+          setCurrentStay(JSON.parse(cachedStay));
+        } catch (e) {
+          console.warn('Failed to parse cached stay data');
+        }
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!user || userLoading) return;
     async function fetchInit() {
@@ -69,11 +102,17 @@ export default function DashboardPage() {
           console.error("init error", data);
           return;
         }
-        setHouse({
+        const houseData = {
           level: data.house.level,
           rizz_point: data.house.rizz_point,
           last_claim: data.house.last_claim
-        });
+        };
+        setHouse(houseData);
+
+        // Cache house data
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('dashboard_house', JSON.stringify(houseData));
+        }
 
         // Check if new user (just built house)
         if (data.house.level === 1 && !data.house.last_claim) {
@@ -87,7 +126,7 @@ export default function DashboardPage() {
     fetchInit();
   }, [user, userLoading]);
 
-  // Polling for real-time updates (guests and current stay)
+  // Polling for real-time updates (guests, current stay, and house data)
   useEffect(() => {
     if (!user || userLoading) return;
 
@@ -98,7 +137,13 @@ export default function DashboardPage() {
         body: JSON.stringify({ host_fid: user.fid })
       });
       const guestsData = await guestsRes.json();
-      if (guestsRes.ok) setGuests(guestsData.guests || []);
+      if (guestsRes.ok) {
+        const guests = guestsData.guests || [];
+        setGuests(guests);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('dashboard_guests', JSON.stringify(guests));
+        }
+      }
     };
 
     const fetchCurrentStay = async () => {
@@ -109,13 +154,40 @@ export default function DashboardPage() {
       });
       const stayData = await stayRes.json();
       if (stayRes.ok && stayData.stay) {
-        setCurrentStay({
+        const stay = {
           host_fid: stayData.stay.host_fid,
           host_username: stayData.stay.host?.username || `fid:${stayData.stay.host_fid}`,
           start_at: stayData.stay.start_at
-        });
+        };
+        setCurrentStay(stay);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('dashboard_stay', JSON.stringify(stay));
+        }
       } else {
         setCurrentStay(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('dashboard_stay');
+        }
+      }
+    };
+
+    const fetchHouseData = async () => {
+      const houseRes = await fetch("/api/house/info", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fid: user.fid })
+      });
+      const houseData = await houseRes.json();
+      if (houseRes.ok && houseData.house) {
+        const house = {
+          level: houseData.house.level,
+          rizz_point: houseData.house.rizz_point,
+          last_claim: houseData.house.last_claim
+        };
+        setHouse(house);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('dashboard_house', JSON.stringify(house));
+        }
       }
     };
 
@@ -123,13 +195,15 @@ export default function DashboardPage() {
     const timer = setTimeout(() => {
       fetchGuests();
       fetchCurrentStay();
+      fetchHouseData();
     }, 1000); // Delay 1s after init
 
-    // Polling every 30 seconds
+    // Polling every 10 seconds for better real-time feel
     const interval = setInterval(() => {
       fetchGuests();
       fetchCurrentStay();
-    }, 30000);
+      fetchHouseData();
+    }, 10000);
 
     return () => {
       clearTimeout(timer);
@@ -159,11 +233,15 @@ export default function DashboardPage() {
       alert(data.error || "Claim failed");
       return;
     }
-    setHouse({
+    const updatedHouse = {
       level: data.house.level,
       rizz_point: data.house.rizz_point,
       last_claim: data.house.last_claim
-    });
+    };
+    setHouse(updatedHouse);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dashboard_house', JSON.stringify(updatedHouse));
+    }
   };
 
   const handleUpgrade = async () => {
@@ -178,11 +256,15 @@ export default function DashboardPage() {
       alert(data.error || "Upgrade failed");
       return;
     }
-    setHouse({
+    const updatedHouse = {
       level: data.house.level,
       rizz_point: data.house.rizz_point,
       last_claim: data.house.last_claim
-    });
+    };
+    setHouse(updatedHouse);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dashboard_house', JSON.stringify(updatedHouse));
+    }
     // Open upgrade modal
     setUpgradeModal({ isOpen: true, newLevel: data.house.level });
   };
@@ -234,8 +316,19 @@ export default function DashboardPage() {
 
   return (
     <main className="flex flex-col gap-5">
-      <RizzHeader username={user.username} rizzPoint={displayRizz} />
+      <RizzHeader username={user.username} rizzPoint={displayRizz} pfpUrl={user.pfpUrl} />
       <HouseMainCard level={house.level} />
+
+      {/* Mining Status */}
+      <section className="rounded-3xl bg-white shadow-md p-4 text-center">
+        <div className="text-sm font-semibold text-primary">Mining Status</div>
+        <div className="text-xs text-primary/70 mt-1">
+          Mining rate: {miningRate(house.level)} RIZZ/hour
+        </div>
+        <div className="text-xs text-primary/60 mt-1">
+          Next claim available in: {Math.max(0, Math.floor((3600000 - (now.getTime() - new Date(house.last_claim).getTime())) / 60000))} min
+        </div>
+      </section>
 
       {showShareBanner && (
         <section className="rounded-3xl bg-accent/10 border border-accent p-4 text-center">

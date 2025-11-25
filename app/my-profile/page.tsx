@@ -68,7 +68,15 @@ export default function MyProfilePage() {
 
   return (
     <main className="flex flex-col gap-4">
-      <RizzHeader username={user.username} rizzPoint={data?.house.rizz_point || 0} />
+      <header className="relative">
+        <button
+          onClick={() => window.location.href = "/dashboard"}
+          className="absolute left-0 top-0 p-2 text-primary/70 hover:text-primary"
+        >
+          ← Back
+        </button>
+      </header>
+      <RizzHeader username={user.username} rizzPoint={data?.house.rizz_point || 0} pfpUrl={user.pfpUrl} />
       <HouseMainCard level={data?.house.level || 1} />
 
       <section className="rounded-3xl bg-white shadow-md p-4 space-y-3">

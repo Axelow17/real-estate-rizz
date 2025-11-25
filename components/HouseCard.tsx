@@ -5,6 +5,7 @@ type Props = {
   fid: number;
   level: number;
   ownerName?: string;
+  pfpUrl?: string;
   votes?: number;
   miningRate?: number;
   avgStayDuration?: number;
@@ -12,7 +13,7 @@ type Props = {
   onStay?: () => void;
 };
 
-export function HouseCard({ fid, level, ownerName, votes, miningRate, avgStayDuration, onVote, onStay }: Props) {
+export function HouseCard({ fid, level, ownerName, pfpUrl, votes, miningRate, avgStayDuration, onVote, onStay }: Props) {
   const router = useRouter();
   const src = `/houses/level${level}.png`;
 
@@ -26,7 +27,27 @@ export function HouseCard({ fid, level, ownerName, votes, miningRate, avgStayDur
         <Image src={src} alt={`House level ${level}`} fill className="object-contain" />
       </div>
       <div className="text-center text-sm">
-        {ownerName && <div className="font-semibold">@{ownerName}</div>}
+        {ownerName && (
+          <div className="flex items-center justify-center gap-2 mb-1">
+            {pfpUrl ? (
+              <img
+                src={pfpUrl}
+                alt={`${ownerName}'s profile`}
+                className="w-6 h-6 rounded-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-bg font-bold text-xs">
+                  {ownerName.slice(1, 2).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <div className="font-semibold">@{ownerName}</div>
+          </div>
+        )}
         <div className="text-xs text-[#6c5a9b]">Level {level}</div>
         {miningRate && <div className="text-xs text-primary/70">Mining: {miningRate}/hr</div>}
         {avgStayDuration && <div className="text-xs text-primary/70">Avg Stay: {avgStayDuration}h</div>}
