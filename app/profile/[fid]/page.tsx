@@ -73,6 +73,7 @@ export default function ProfilePage() {
         if (!houseRes.ok) {
           // If house not found, this user hasn't joined the game yet
           if (houseRes.status === 404) {
+            console.log('House not found for FID:', targetFid, 'setting level 0');
             setData({
               player: {
                 fid: targetFid,
@@ -236,6 +237,8 @@ export default function ProfilePage() {
           <p className="text-xs text-primary/60">Followers: {data.player.followers || 0}</p>
         </div>
       </header>
+
+      console.log('House level:', data.house.level);
 
       {data.house.level > 0 ? (
         <HouseMainCard level={data.house.level} />

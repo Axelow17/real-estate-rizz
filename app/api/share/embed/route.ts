@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     button: {
       title: buttonTitle,
       action: {
-        type: "launch_miniapp",
+        type: "launch_frame",
         url: actionUrl,
         name: "RealEstate Rizz"
       }

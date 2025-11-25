@@ -5,6 +5,7 @@ import { useFarcasterUser } from "@/lib/useFarcasterUser";
 import { HouseCard } from "@/components/HouseCard";
 import { miningRate } from "@/lib/economy";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 type ExploreHouse = {
   fid: number;
@@ -262,10 +263,16 @@ export default function ExplorePage() {
                 Skip
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   const shareUrl = `https://real-estate-rizz.vercel.app/api/share/embed?action=voted&username=${encodeURIComponent(user.username)}&targetUsername=${encodeURIComponent(shareModal.targetUsername)}`;
                   const text = `I just ${shareModal.action}d @${shareModal.targetUsername}'s house in RealEstate Rizz! ${shareUrl} 🏠❤️`;
-                  window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
+                  try {
+                    await sdk.actions.composeCast({ text });
+                  } catch (err) {
+                    console.warn("Failed to compose cast", err);
+                    // Fallback to manual share
+                    window.open(`https://warpcast.com/compose?text=${encodeURIComponent(text)}`, '_blank');
+                  }
                   shareModal.onClose();
                 }}
                 className="flex-1 py-2 bg-primary text-bg rounded-full font-semibold"
