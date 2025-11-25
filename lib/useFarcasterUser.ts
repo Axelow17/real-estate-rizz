@@ -41,6 +41,13 @@ export function useFarcasterUser() {
         }
 
         setUser({ fid, username, pfpUrl });
+        
+        // Notify Farcaster client that the miniapp is ready
+        try {
+          await sdk.actions.ready();
+        } catch (err) {
+          console.warn("Failed to call sdk.actions.ready()", err);
+        }
       } catch (e: any) {
         setError(e?.message || "Unknown error");
       } finally {
