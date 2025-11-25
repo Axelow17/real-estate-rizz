@@ -74,10 +74,18 @@ export default function MyStayPage() {
 
   return (
     <main className="flex flex-col gap-4">
-      <header className="text-center">
-        <h1 className="text-2xl font-bold">My Stay</h1>
-        <p className="text-xs text-primary/70 mt-1">
-          Your current stay status.
+      <header className="relative">
+        <button
+          onClick={() => window.location.href = "/dashboard"}
+          className="absolute left-0 top-0 p-2 text-primary/70 hover:text-primary"
+          aria-label="Back to dashboard"
+        >
+          ← Back
+        </button>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">My Stay</h1>
+          <p className="text-xs text-primary/70 mt-1">
+            Your current stay status.
         </p>
       </header>
 
