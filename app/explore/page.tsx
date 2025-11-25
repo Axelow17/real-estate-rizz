@@ -264,8 +264,9 @@ export default function ExplorePage() {
               </button>
               <button
                 onClick={async () => {
-                  const shareUrl = `https://real-estate-rizz.vercel.app/api/share/embed?action=voted&username=${encodeURIComponent(user.username)}&targetUsername=${encodeURIComponent(shareModal.targetUsername)}`;
-                  const text = `I just ${shareModal.action}d @${shareModal.targetUsername}'s house in RealEstate Rizz! ${shareUrl} 🏠❤️`;
+                  const shareUrl = `https://real-estate-rizz.vercel.app/api/share/embed?action=${shareModal.action === 'vote' ? 'voted' : 'stayed'}&username=${encodeURIComponent(user.username)}&targetUsername=${encodeURIComponent(shareModal.targetUsername)}`;
+                  const actionText = shareModal.action === 'vote' ? 'voted' : 'stayed';
+                  const text = `I just ${actionText} @${shareModal.targetUsername}'s house in RealEstate Rizz! ${shareUrl}`;
                   try {
                     await sdk.actions.composeCast({ text });
                   } catch (err) {
