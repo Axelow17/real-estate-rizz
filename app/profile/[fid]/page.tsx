@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useFarcasterUser } from "@/lib/useFarcasterUser";
 import { HouseMainCard } from "@/components/HouseMainCard";
-import { neynarClient } from "@/lib/neynar";
 
 type ProfileData = {
   player: {
@@ -42,9 +41,17 @@ export default function ProfilePage() {
         const targetFid = parseInt(fid);
         if (!targetFid) throw new Error("Invalid FID");
 
-        // Fetch from Neynar
-        const neynarResp = await neynarClient.fetchBulkUsers({ fids: [targetFid] });
-        const neynarUser = neynarResp.users[0];
+        // Fetch from Neynar directly
+        const neynarResp = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${targetFid}`, {
+          headers: {
+            'api_key': process.env.NEXT_PUBLIC_NEYNAR_API_KEY || 'NEYNAR_API_KEY_MISSING'
+          }
+        });
+        let neynarUser = null;
+        if (neynarResp.ok) {
+          const neynarData = await neynarResp.json();
+          neynarUser = neynarData.users?.[0];
+        }
         // If not found on Neynar, use default
         const username = neynarUser?.username || `fid:${targetFid}`;
         const pfp_url = neynarUser?.pfp_url;
