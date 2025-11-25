@@ -1,124 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useFarcasterUser } from "@/lib/useFarcasterUser";
-import { HouseCard } from "@/components/HouseCard";
-import { getSupabaseClient } from "@/lib/supabaseClient";
-
-type LeaderboardEntry = {
-  host_fid: number;
-  username: string;
-  pfp_url?: string;
-  level: number;
-  votesCount?: number; // For vote-based leaderboards
-  currentRizz?: number; // For rizz leaderboard
-  baseRizz?: number; // For rizz leaderboard
-  miningRate?: number; // For rizz leaderboard
-};
-
-type Tab = "weekly" | "alltime" | "toprizz";
+import Leaderboard from "@/components/Leaderboard";
 
 export default function LeaderboardPage() {
   const { user, loading, error } = useFarcasterUser();
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [fromDate, setFromDate] = useState<string | null>(null);
-  const [loadingBoard, setLoadingBoard] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>("weekly");
-
-  useEffect(() => {
-    async function loadLeaderboard() {
-      setLoadingBoard(true);
-      try {
-        let endpoint = "/api/leaderboard/weekly";
-        if (activeTab === "alltime") endpoint = "/api/leaderboard/alltime";
-        if (activeTab === "toprizz") endpoint = "/api/leaderboard/top-rizz";
-
-        const res = await fetch(endpoint);
-        const data = await res.json();
-        if (!res.ok) {
-          console.error(data);
-          return;
-        }
-        setEntries(data.leaderboard || []);
-        setFromDate(data.from || null);
-      } finally {
-        setLoadingBoard(false);
-      }
-    }
-    loadLeaderboard();
-  }, [activeTab]);
-
-  // Real-time subscription for leaderboard updates
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    try {
-      const leaderboardChannel = getSupabaseClient()
-        .channel('leaderboard-updates')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'houses'
-          },
-          (payload: any) => {
-            console.log('Leaderboard house update:', payload);
-            // Refresh leaderboard when houses are updated (level changes, etc.)
-            setTimeout(() => {
-              let endpoint = "/api/leaderboard/weekly";
-              if (activeTab === "alltime") endpoint = "/api/leaderboard/alltime";
-              if (activeTab === "toprizz") endpoint = "/api/leaderboard/top-rizz";
-
-              fetch(endpoint).then(res => res.json()).then(data => {
-                if (data.leaderboard) {
-                  setEntries(data.leaderboard);
-                  setFromDate(data.from || null);
-                }
-              }).catch(err => console.error('Failed to refresh leaderboard:', err));
-            }, 200);
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'votes'
-          },
-          (payload: any) => {
-            console.log('Leaderboard vote update:', payload);
-            // Refresh leaderboard when votes change
-            setTimeout(() => {
-              let endpoint = "/api/leaderboard/weekly";
-              if (activeTab === "alltime") endpoint = "/api/leaderboard/alltime";
-              if (activeTab === "toprizz") endpoint = "/api/leaderboard/top-rizz";
-
-              fetch(endpoint).then(res => res.json()).then(data => {
-                if (data.leaderboard) {
-                  setEntries(data.leaderboard);
-                  setFromDate(data.from || null);
-                }
-              }).catch(err => console.error('Failed to refresh leaderboard:', err));
-            }, 200);
-          }
-        )
-        .subscribe((status: any) => {
-          console.log('Leaderboard channel status:', status);
-        });
-
-      return () => {
-        try {
-          getSupabaseClient().removeChannel(leaderboardChannel);
-        } catch (err) {
-          console.error('Error removing leaderboard channel:', err);
-        }
-      };
-    } catch (err) {
-      console.error('Error setting up real-time leaderboard subscription:', err);
-      return () => {};
-    }
-  }, [activeTab]);
 
   if (loading) {
     return (
@@ -147,101 +33,11 @@ export default function LeaderboardPage() {
           ← Back
         </button>
         <div className="text-center">
-          <h1 className="text-2xl font-bold">
-            {activeTab === "weekly" ? "Weekly Leaderboard" :
-             activeTab === "alltime" ? "All-Time Votes" : "Top Rizz"}
-          </h1>
-          {activeTab === "weekly" && fromDate && (
-            <p className="text-[11px] text-primary/70 mt-1">
-              Votes since {fromDate}
-            </p>
-          )}
+          <h1 className="text-2xl font-bold">Leaderboard</h1>
         </div>
       </header>
 
-      <nav className="flex gap-2 justify-center">
-        <button
-          onClick={() => setActiveTab("weekly")}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab("weekly"); }}
-          className={`px-3 py-1 rounded-full text-sm font-medium ${
-            activeTab === "weekly" ? "bg-primary text-bg" : "bg-white text-primary"
-          }`}
-          aria-label="Show weekly leaderboard"
-          aria-pressed={activeTab === "weekly" ? true : false}
-        >
-          Weekly
-        </button>
-        <button
-          onClick={() => setActiveTab("alltime")}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab("alltime"); }}
-          className={`px-3 py-1 rounded-full text-sm font-medium ${
-            activeTab === "alltime" ? "bg-primary text-bg" : "bg-white text-primary"
-          }`}
-          aria-label="Show all-time leaderboard"
-          aria-pressed={activeTab === "alltime" ? true : false}
-        >
-          All-Time
-        </button>
-        <button
-          onClick={() => setActiveTab("toprizz")}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab("toprizz"); }}
-          className={`px-3 py-1 rounded-full text-sm font-medium ${
-            activeTab === "toprizz" ? "bg-primary text-bg" : "bg-white text-primary"
-          }`}
-          aria-label="Show top rizz leaderboard"
-          aria-pressed={activeTab === "toprizz" ? true : false}
-        >
-          Top Rizz
-        </button>
-      </nav>
-
-      {loadingBoard ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, idx) => (
-            <div key={idx} className="rounded-3xl bg-white shadow-md p-3 flex gap-3 items-center animate-pulse">
-              <div className="w-6 h-6 bg-gray-200 rounded"></div>
-              <div className="flex-1">
-                <div className="w-32 h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="w-24 h-3 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : entries.length === 0 ? (
-        <div className="text-xs text-primary/70">
-          {activeTab === "weekly" ? "No voting activity this week yet." :
-           activeTab === "alltime" ? "No votes recorded yet." : "No houses found."}
-        </div>
-      ) : (
-        <section className="space-y-3">
-          {entries.map((e, idx) => (
-            <div
-              key={e.host_fid}
-              className="rounded-3xl bg-white shadow-md p-3 flex gap-3 items-center"
-            >
-              <div className="text-lg font-bold w-6 text-center">
-                {idx + 1}
-              </div>
-              <div className="flex-1">
-                <HouseCard
-                  fid={e.host_fid}
-                  level={e.level}
-                  ownerName={e.username}
-                  pfpUrl={e.pfp_url}
-                  votes={activeTab === "toprizz" ? undefined : e.votesCount}
-                  miningRate={activeTab === "toprizz" ? e.miningRate : undefined}
-                />
-              </div>
-              {activeTab === "toprizz" && e.currentRizz && (
-                <div className="text-right">
-                  <div className="text-lg font-bold text-primary">{e.currentRizz}</div>
-                  <div className="text-xs text-primary/70">RIZZ</div>
-                </div>
-              )}
-            </div>
-          ))}
-        </section>
-      )}
+      <Leaderboard limit={50} showTabs={true} />
 
       {user && (
         <footer className="mt-2 text-center text-[11px] text-primary/60">

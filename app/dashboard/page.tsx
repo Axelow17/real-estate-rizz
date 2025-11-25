@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RizzHeader } from "@/components/RizzHeader";
 import { HouseMainCard } from "@/components/HouseMainCard";
+import Leaderboard from "@/components/Leaderboard";
 import { useFarcasterUser } from "@/lib/useFarcasterUser";
 import { miningRate, nextUpgradeCost } from "@/lib/economy";
 import { getSupabaseClient } from "@/lib/supabaseClient";
@@ -677,6 +678,19 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+      </section>
+
+      <section className="mt-4 flex flex-col gap-3">
+        <div className="text-sm font-semibold uppercase tracking-wide text-primary">
+          LEADERBOARD
+        </div>
+        <Leaderboard limit={3} showTabs={false} defaultTab="weekly" />
+        <button
+          onClick={() => window.location.href = "/leaderboard"}
+          className="mt-2 px-4 py-2 rounded-full bg-primary text-bg font-semibold text-sm shadow-md"
+        >
+          VIEW FULL LEADERBOARD
+        </button>
       </section>
 
       {/* Share Modal */}
