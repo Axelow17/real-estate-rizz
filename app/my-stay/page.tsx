@@ -86,7 +86,8 @@ export default function MyStayPage() {
           <h1 className="text-2xl font-bold">My Stay</h1>
           <p className="text-xs text-primary/70 mt-1">
             Your current stay status.
-        </p>
+          </p>
+        </div>
       </header>
 
       {loadingStay ? (
